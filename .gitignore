@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+demo/checkpoints.db
+demo/checkpoints.db-*
+demo/output/
+*.egg-info/
+.DS_Store.venv/
+examples/quickstart.db*
+examples/died
+comparisons/**/.venv/
