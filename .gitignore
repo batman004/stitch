@@ -9,3 +9,4 @@ demo/output/
 examples/quickstart.db*
 examples/died
 comparisons/**/.venv/
+demo.cast
