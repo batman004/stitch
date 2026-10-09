@@ -10,3 +10,5 @@ examples/quickstart.db*
 examples/died
 comparisons/**/.venv/
 demo.cast
+examples/**/.venv/
+examples/breach_monitor/*.db*
