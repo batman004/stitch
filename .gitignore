@@ -12,3 +12,6 @@ comparisons/**/.venv/
 demo.cast
 examples/**/.venv/
 examples/breach_monitor/*.db*
+.env
+.env.*
+!.env.example

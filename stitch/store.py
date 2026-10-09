@@ -281,7 +281,8 @@ class Store:
             (run_id, item, row[0]))]
         self._db.execute("DELETE FROM steps WHERE run_id = ? AND item = ? AND seq >= ?",
                          (run_id, item, row[0]))
-        self.set_item(run_id, item, "running", degraded=0)
+        # keep degraded=1: it is cleared only when the rerun succeeds, so a failed heal can be retried
+        self.set_item(run_id, item, "running")
         return names
 
     # -- steps ------------------------------------------------------------
