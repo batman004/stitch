@@ -3,10 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# "stitch" is taken on PyPI, so the distribution is stitch-durable. The import name is still `stitch`.
 name = "stitch-durable"
 version = "0.1.0"
-description = "Resumable async Python pipelines from the standard library alone: checkpoints, retries, audit trail, provider fallbacks"
+description = "Resumable async Python workflows from the standard library alone: checkpoints, retries, audit trail, provider fallbacks"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -19,7 +18,8 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-[tool.setuptools]
-packages = ["stitch"]
+[tool.setuptools.packages.find]
+include = ["stitch*"]
+
 [tool.setuptools.package-data]
 stitch = ["py.typed"]
