@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS runs (
     status TEXT NOT NULL,
     parameters TEXT NOT NULL,
     created_at REAL NOT NULL,
-    updated_at REAL NOT NULL
+    updated_at REAL NOT NULL,
+    halted_step TEXT,
+    halt_reason TEXT
 );
 CREATE TABLE IF NOT EXISTS items (
     run_id TEXT NOT NULL,

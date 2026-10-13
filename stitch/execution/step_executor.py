@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from ..errors import NoProviderAvailable, Park, StepFailed, TransientError, describe_error
+from ..errors import CriticalStepFailed, NoProviderAvailable, Park, StepFailed, TransientError, describe_error
 from ..records import StepRecord
 from .context import ExecutionContext, ItemContext, StepContext, StepIdentity
 from .run_session import RunSession
@@ -93,7 +93,8 @@ class StepExecutor:
                     return self._handle_exhausted_retries(definition, identity, attempt, error)
                 await self._wait_before_retry(definition, identity, attempt, error)
             except Exception as error:
-                raise self._fail_step(identity, error, attempt, isinstance(error, TransientError)) from error
+                failure = self._fail_step(identity, error, attempt, isinstance(error, TransientError))
+                raise self._escalate(definition, identity, failure) from error
 
     async def _call_once(self, definition: StepDefinition, identity: StepIdentity, attempt: int, args: tuple, kwargs: dict) -> Any:
         context = StepContext(self.session.run_id, identity.item_key, identity.step_id, attempt)
@@ -112,7 +113,7 @@ class StepExecutor:
 
     def _handle_exhausted_retries(self, definition: StepDefinition, identity: StepIdentity, attempt: int, error: BaseException) -> StepOutcome:
         if definition.degrade_function is None:
-            raise self._fail_step(identity, error, attempt, True) from error
+            raise self._escalate(definition, identity, self._fail_step(identity, error, attempt, True)) from error
         reason = f"retries exhausted: {describe_error(error)}"
         return StepOutcome(attempts=attempt, degraded_reason=reason, degraded_cause=error)
 
@@ -142,6 +143,11 @@ class StepExecutor:
         if "cause" in parameters:
             return {**kwargs, "cause": cause}
         return kwargs
+
+    def _escalate(self, definition: StepDefinition, identity: StepIdentity, failure: StepFailed) -> Exception:
+        if definition.critical is None or not failure.transient:
+            return failure
+        return self.session.register_critical_failure(CriticalStepFailed(definition.name, identity.item_key, failure.cause))
 
     def _fail_step(self, identity: StepIdentity, error: BaseException, attempt: int, transient: bool) -> StepFailed:
         self.store.steps.mark_failed(

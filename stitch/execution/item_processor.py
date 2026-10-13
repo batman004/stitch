@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable
 
-from ..errors import Park, StepFailed
+from ..errors import CriticalStepFailed, Park, StepFailed
 from ..records import ItemRecord
 from ..retry_policy import RetryPolicy
 from ..serialization import to_json_text
@@ -57,6 +57,8 @@ class ItemProcessor:
             return ItemAttempt(self._park_item(item_key, input_text, error))
         except StepFailed as error:
             return await self._handle_step_failure(item_key, error, attempt)
+        except CriticalStepFailed:
+            raise
         except Exception as error:
             return ItemAttempt(self._fail_item(item_key, f"{type(error).__name__}: {error}"))
         finally:

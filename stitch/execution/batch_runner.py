@@ -3,6 +3,9 @@ import time
 from dataclasses import dataclass
 from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable, Iterable
 
+from ..alerts import Alert, Alerter
+from ..critical import CriticalRegistry
+from ..errors import CriticalStepFailed, HealthCheckFailed
 from ..retry_policy import NO_RETRY, RetryPolicy
 from ..storage.checkpoint_store import CheckpointStore
 from .context import ExecutionContext
@@ -22,6 +25,7 @@ class BatchOptions:
     maximum_parked_wait_seconds: float | None = None
     record_audit: bool = True
     parameters: dict | None = None
+    alerter: Alerter | None = None
 
 
 class BatchRunner:
@@ -39,10 +43,11 @@ class BatchRunner:
         self.options = options
         self.store = store
         run_id = f"{workflow_name}:{batch_label}"
-        self.session = RunSession(run_id, store, reporter or Reporter(), options.record_audit)
+        self.session = RunSession(run_id, store, reporter or Reporter(), options.record_audit, options.alerter)
         self.processor = ItemProcessor(self.session, handler, key_function, options.item_retry_policy)
 
     async def run(self, items: Iterable[Any] | AsyncIterable[Any]) -> RunStatistics:
+        await self._require_healthy_resource()
         previous_status = self.store.runs.open_run(
             self.session.run_id, self.workflow_name, self.options.parameters or {}
         )
@@ -55,11 +60,41 @@ class BatchRunner:
             await self._process_items(items)
             if self.options.wait_for_parked:
                 await self._retry_parked_items()
+        except CriticalStepFailed as failure:
+            self._record_halt(failure)
+            raise
         finally:
             ExecutionContext.release_run(token)
         return self._finish_run()
 
+    async def _require_healthy_resource(self) -> None:
+        halt = self.store.runs.get_halt(self.session.run_id)
+        if halt is None:
+            return
+        step_name = halt[0]
+        policy = CriticalRegistry.default().find(step_name)
+        problem = await policy.verify() if policy else None
+        if problem is not None:
+            self.session.emit("run_blocked", step=step_name, reason=problem)
+            raise HealthCheckFailed(step_name, problem)
+        self.session.emit("run_recovered", step=step_name)
+        title = f"{step_name} is healthy again, the run resumes"
+        self.session.send_alert(Alert("recovered", title, self.session.run_id, step_name, {}))
+
+    def _record_halt(self, failure: CriticalStepFailed) -> None:
+        self.store.runs.mark_halted(self.session.run_id, failure.step_name, str(failure))
+        self.session.emit("run_halted", step=failure.step_name, item=failure.item_key, error=str(failure))
+
     async def _process_items(self, items: Iterable[Any] | AsyncIterable[Any]) -> None:
+        try:
+            await self._feed_workers(items)
+        except BaseExceptionGroup as group:
+            critical, _ = group.split(CriticalStepFailed)
+            if critical is None:
+                raise
+            raise critical.exceptions[0] from None
+
+    async def _feed_workers(self, items: Iterable[Any] | AsyncIterable[Any]) -> None:
         concurrency = self.options.concurrency
         queue: asyncio.Queue = asyncio.Queue(maxsize=concurrency)
         async with asyncio.TaskGroup() as workers:

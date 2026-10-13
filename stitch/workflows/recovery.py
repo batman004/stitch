@@ -1,5 +1,6 @@
 from typing import Iterator
 
+from ..alerts import Alerter
 from ..execution.reporting import Reporter, RunStatistics
 from ..storage.checkpoint_store import CheckpointStore
 from .registry import WorkflowRegistry
@@ -16,6 +17,7 @@ class WorkflowRecovery:
         workflow_names: list[str] | None = None,
         concurrency: int = 1,
         reporter: Reporter | None = None,
+        alerter: Alerter | None = None,
         wait_for_parked: bool = False,
         maximum_parked_wait_seconds: float | None = None,
     ) -> dict[str, RunStatistics]:
@@ -24,7 +26,7 @@ class WorkflowRecovery:
             inputs = [item.input_value for item in self.store.items.list_resumable(run_id)]
             if inputs:
                 outcomes[run_id] = await self._rerun(
-                    run_id, workflow, inputs, concurrency, reporter, wait_for_parked, maximum_parked_wait_seconds
+                    run_id, workflow, inputs, concurrency, reporter, alerter, wait_for_parked, maximum_parked_wait_seconds
                 )
         return outcomes
 
@@ -33,6 +35,7 @@ class WorkflowRecovery:
         workflow_names: list[str] | None = None,
         concurrency: int = 1,
         reporter: Reporter | None = None,
+        alerter: Alerter | None = None,
         wait_for_parked: bool = False,
         maximum_parked_wait_seconds: float | None = None,
     ) -> dict[str, RunStatistics]:
@@ -43,7 +46,7 @@ class WorkflowRecovery:
                 self._invalidate_degraded_items(run_id, degraded_items)
                 inputs = [item.input_value for item in degraded_items]
                 outcomes[run_id] = await self._rerun(
-                    run_id, workflow, inputs, concurrency, reporter, wait_for_parked, maximum_parked_wait_seconds
+                    run_id, workflow, inputs, concurrency, reporter, alerter, wait_for_parked, maximum_parked_wait_seconds
                 )
         return outcomes
 
@@ -54,12 +57,12 @@ class WorkflowRecovery:
 
     async def _rerun(
         self, run_id: str, workflow: Workflow, inputs: list, concurrency: int, reporter,
-        wait_for_parked: bool, maximum_parked_wait_seconds: float | None,
+        alerter, wait_for_parked: bool, maximum_parked_wait_seconds: float | None,
     ) -> RunStatistics:
         batch_label = run_id.split(":", 1)[1]
         return await workflow.run_many(
             inputs, self.store, batch_label=batch_label, concurrency=concurrency, reporter=reporter,
-            wait_for_parked=wait_for_parked, maximum_parked_wait_seconds=maximum_parked_wait_seconds,
+            alerter=alerter, wait_for_parked=wait_for_parked, maximum_parked_wait_seconds=maximum_parked_wait_seconds,
         )
 
     def _registered_runs(self, workflow_names: list[str] | None) -> Iterator[tuple[str, Workflow]]:
