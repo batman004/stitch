@@ -1,6 +1,6 @@
 # Install with: pre-commit install
-default_install_hook_types: [pre-push]
-default_stages: [pre-push]
+default_install_hook_types: [pre-commit]
+default_stages: [pre-commit]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
