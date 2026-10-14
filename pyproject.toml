@@ -23,3 +23,7 @@ include = ["stitch*"]
 
 [tool.setuptools.package-data]
 stitch = ["py.typed"]
+
+[tool.ruff.lint]
+# Correctness rules only (pyflakes + pycodestyle errors); style rule sets are opt-in.
+select = ["E4", "E7", "E9", "F"]

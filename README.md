@@ -755,6 +755,12 @@ python -m unittest
 
 No dependencies needed — no virtual environment required.
 
+To lint with ruff and run the tests automatically before every `git push`:
+
+```bash
+pre-commit install
+```
+
 ---
 
 ## License

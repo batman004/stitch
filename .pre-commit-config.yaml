@@ -1,0 +1,18 @@
+# Install with: pre-commit install
+default_install_hook_types: [pre-push]
+default_stages: [pre-push]
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0
+    hooks:
+      - id: ruff-check
+
+  - repo: local
+    hooks:
+      - id: unittest
+        name: unittest
+        entry: python3 -m unittest
+        language: system
+        pass_filenames: false
+        always_run: true
