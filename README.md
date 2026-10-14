@@ -169,151 +169,21 @@ print(f"{stats.items_done} done, {stats.items_failed} failed, {stats.step_retrie
 
 ### Architecture
 
-```mermaid
-flowchart TB
-    subgraph userland ["🟦 Application Layer"]
-        handler["workflow function"]
-        stepfn["@step functions"]
-        pool["ProviderPool"]
-        alerter["Alerter"]
-    end
+![Architecture: the engine calls back into your workflow and step functions, and every status change is written to one SQLite file](https://raw.githubusercontent.com/batman004/stitch/main/docs/diagrams/architecture.svg)
 
-    subgraph engine ["⚙️ Engine Layer"]
-        registry["WorkflowRegistry"]
-        critical["CriticalRegistry"]
-        workflow["Workflow"]
-        recovery["WorkflowRecovery"]
-        runner["BatchRunner"]
-        processor["ItemProcessor"]
-        executor["StepExecutor"]
-        tracer["TraceRenderer"]
-    end
+The highlighted path is the route one item takes. The engine calls back into your workflow and step functions, and every status change is written to one SQLite file.
 
-    subgraph storage ["💾 Storage Layer"]
-        store["CheckpointStore"]
-        runs["RunRepository"]
-        items["ItemRepository"]
-        steps["StepRepository"]
-        audit["AuditRepository"]
-        providers["ProviderRepository"]
-        breakers["BreakerRepository"]
-        db[("SQLite - WAL mode")]
-    end
+### One Step Call
 
-    handler --> workflow
-    workflow --> registry
-    workflow --> runner
-    recovery --> registry
-    recovery --> workflow
-    runner --> critical
-    runner --> processor
-    runner --> alerter
-    processor --> handler
-    handler --> stepfn
-    stepfn --> executor
-    stepfn --> pool
+![One step call: reuse a checkpoint, otherwise run with retries, then fall back, park, halt or fail](https://raw.githubusercontent.com/batman004/stitch/main/docs/diagrams/step-flow.svg)
 
-    store --> runs
-    store --> items
-    store --> steps
-    store --> audit
-    store --> providers
-    store --> breakers
-    runs --> db
-    items --> db
-    steps --> db
-    audit --> db
-    providers --> db
-    breakers --> db
-
-    runner --> store
-    processor --> store
-    executor --> store
-    pool --> store
-    recovery --> store
-    store --> tracer
-```
-
-### Request Flow
-
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant WF as Workflow
-    participant Runner as BatchRunner
-    participant Item as ItemProcessor
-    participant Step as StepExecutor
-    participant Pool as ProviderPool
-    participant DB as CheckpointStore
-
-    App->>WF: run_many(items, store)
-    WF->>Runner: run(items)
-    Runner->>DB: open run (health check if halted)
-
-    loop each item (up to concurrency workers)
-        Runner->>Item: process(item)
-        alt item already done
-            Item->>DB: read saved result
-            Item-->>Runner: skip
-        else item needs work
-            Item->>DB: mark running
-            Item->>App: call workflow function
-            App->>Step: @step wrapper
-            Step->>DB: checkpoint exists? reuse : start attempt
-
-            loop retry loop
-                Step->>App: call original function
-                opt step calls a provider pool
-                    App->>Pool: pool.call(operation)
-                    Pool->>DB: load providers & breakers
-                    alt provider succeeds
-                        Pool-->>App: result
-                    else provider fails
-                        Pool->>DB: update breaker state
-                        Pool->>Pool: try next provider
-                    end
-                end
-                alt success
-                    Step->>DB: save done
-                else retryable error
-                    Step->>Step: backoff & retry
-                else exhausted
-                    alt has degrade
-                        Step->>App: call fallback
-                        Step->>DB: save degraded
-                    else critical step
-                        Step->>Runner: halt batch
-                        Runner->>DB: mark halted
-                    else
-                        Step->>DB: save failed
-                    end
-                end
-            end
-        end
-    end
-
-    Runner-->>App: RunStatistics
-```
+What happens each time a `@step` function is called. The gates are checked top to bottom, and the first one that says yes decides the outcome.
 
 ### Item Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> running : run_many starts item
-    running --> done : all steps pass
-    running --> done : step degrades, rest pass
-    running --> failed : step fails permanently
-    running --> parked : no provider, no degrade
-    running --> running : item retry after failure
+![Item lifecycle: running items end done, degraded, parked or failed; heal(), resume() and run_many() send them back to running](https://raw.githubusercontent.com/batman004/stitch/main/docs/diagrams/item-lifecycle.svg)
 
-    parked --> running : resume / wait_for_parked
-    failed --> running : next run_many retries
-
-    done --> running : heal (if degraded flag set)
-    done --> [*] : next run_many skips
-
-    note right of done : Items with degraded flag\nare eligible for heal()
-```
+Item status as stored in the `items` table. A degraded item is done with a flag; `heal()` redoes the first degraded step and everything after it.
 
 ### Key Design Decisions
 

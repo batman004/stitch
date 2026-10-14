@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 672" width="940" height="672" role="img" aria-label="One step call: reuse a checkpoint, otherwise run with retries, then fall back, park, halt or fail in that order."><title>One step call: reuse a checkpoint, otherwise run with retries, then fall back, park, halt or fail in that order.</title><style>svg { --d-paper: #fbfcfe; --d-panel: #eef1f7; --d-line: #c3cad8; --d-ink: #1b2130; --d-muted: #5a6377; --d-accent: #3554d1; --d-ok: #1d7f53; --d-ok-bg: #e3f3ea; --d-warn: #9a6410; --d-warn-bg: #fbf0d9; --d-park: #2f6ea8; --d-park-bg: #e3eef9; --d-bad: #b8382f; --d-bad-bg: #fbe6e3; }@media (prefers-color-scheme: dark) { svg { --d-paper: #10141c; --d-panel: #181e2b; --d-line: #39425a; --d-ink: #e5e9f2; --d-muted: #97a1b6; --d-accent: #8ea5ff; --d-ok: #5fca92; --d-ok-bg: #132a1e; --d-warn: #e2b35f; --d-warn-bg: #2d2412; --d-park: #82b6ec; --d-park-bg: #132235; --d-bad: #f18a7f; --d-bad-bg: #331715; } }
+.d-bg { fill: var(--d-paper); }
+.d-band { fill: var(--d-panel); }
+.d-band-label { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; letter-spacing: 0.1em; fill: var(--d-muted); }
+.d-box { fill: var(--d-paper); stroke: var(--d-line); stroke-width: 1.25; }
+.d-q { fill: var(--d-panel); stroke: var(--d-line); stroke-width: 1.25; stroke-dasharray: 4 3; }
+.d-name { font: 600 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: var(--d-ink); }
+.d-title { font: 600 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-ink); }
+.d-sub { font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-muted); }
+.d-edge { stroke: var(--d-muted); stroke-width: 1.5; fill: none; }
+.d-edge-accent { stroke: var(--d-accent); stroke-width: 2; fill: none; }
+.d-label { font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-muted); }
+.d-label-accent { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-accent); }
+.d-head { fill: var(--d-muted); }
+.d-head-accent { fill: var(--d-accent); }
+.d-dot { fill: var(--d-ink); }
+
+.d-ok .d-box { fill: var(--d-ok-bg); stroke: var(--d-ok); }
+.d-ok .d-title, .d-ok .d-name { fill: var(--d-ok); }
+.d-edge-ok { stroke: var(--d-ok); stroke-width: 1.5; fill: none; }
+.d-head-ok { fill: var(--d-ok); }
+.d-label-ok { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-ok); }
+.d-warn .d-box { fill: var(--d-warn-bg); stroke: var(--d-warn); }
+.d-warn .d-title, .d-warn .d-name { fill: var(--d-warn); }
+.d-edge-warn { stroke: var(--d-warn); stroke-width: 1.5; fill: none; }
+.d-head-warn { fill: var(--d-warn); }
+.d-label-warn { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-warn); }
+.d-park .d-box { fill: var(--d-park-bg); stroke: var(--d-park); }
+.d-park .d-title, .d-park .d-name { fill: var(--d-park); }
+.d-edge-park { stroke: var(--d-park); stroke-width: 1.5; fill: none; }
+.d-head-park { fill: var(--d-park); }
+.d-label-park { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-park); }
+.d-bad .d-box { fill: var(--d-bad-bg); stroke: var(--d-bad); }
+.d-bad .d-title, .d-bad .d-name { fill: var(--d-bad); }
+.d-edge-bad { stroke: var(--d-bad); stroke-width: 1.5; fill: none; }
+.d-head-bad { fill: var(--d-bad); }
+.d-label-bad { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-bad); }</style><defs><marker id="flow-head-plain" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="flow-head-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="flow-head-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="flow-head-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-warn" d="M0,0 L10,5 L0,10 z"/></marker><marker id="flow-head-park" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-park" d="M0,0 L10,5 L0,10 z"/></marker><marker id="flow-head-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-bad" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="d-bg" x="0" y="0" width="940" height="672" rx="14"/>
+<g>
+<rect class="d-q" x="200" y="30" width="300" height="52" rx="8"/>
+<text class="d-title" x="350.0" y="60.5" text-anchor="middle">Checkpoint saved for this call?</text>
+</g>
+<g>
+<rect class="d-box" x="200" y="122" width="300" height="52" rx="8"/>
+<text class="d-title" x="350.0" y="145.0" text-anchor="middle">Run the step body</text>
+<text class="d-sub" x="350.0" y="161.0" text-anchor="middle">with its timeout</text>
+</g>
+<g>
+<rect class="d-q" x="200" y="214" width="300" height="52" rx="8"/>
+<text class="d-title" x="350.0" y="244.5" text-anchor="middle">Degrade function defined?</text>
+</g>
+<g>
+<rect class="d-q" x="200" y="306" width="300" height="52" rx="8"/>
+<text class="d-title" x="350.0" y="336.5" text-anchor="middle">No provider available?</text>
+</g>
+<g>
+<rect class="d-q" x="200" y="398" width="300" height="52" rx="8"/>
+<text class="d-title" x="350.0" y="428.5" text-anchor="middle">Critical step, transient error?</text>
+</g>
+<g>
+<rect class="d-q" x="200" y="490" width="300" height="52" rx="8"/>
+<text class="d-title" x="350.0" y="520.5" text-anchor="middle">Transient, item retries left?</text>
+</g>
+<g>
+<rect class="d-box" x="610" y="30" width="300" height="52" rx="8"/>
+<text class="d-title" x="760.0" y="53.0" text-anchor="middle">Reuse the saved result</text>
+<text class="d-sub" x="760.0" y="69.0" text-anchor="middle">step skipped</text>
+</g>
+<path class="d-edge" d="M500,56.0 L610,56.0" marker-end="url(#flow-head-plain)"/>
+<text class="d-label" x="555.0" y="48.0" text-anchor="middle">yes</text>
+<g class="d-ok">
+<rect class="d-box" x="610" y="122" width="300" height="52" rx="8"/>
+<text class="d-title" x="760.0" y="145.0" text-anchor="middle">Save the checkpoint</text>
+<text class="d-sub" x="760.0" y="161.0" text-anchor="middle">step done</text>
+</g>
+<path class="d-edge-ok" d="M500,148.0 L610,148.0" marker-end="url(#flow-head-ok)"/>
+<text class="d-label-ok" x="555.0" y="140.0" text-anchor="middle">returns</text>
+<g class="d-warn">
+<rect class="d-box" x="610" y="214" width="300" height="52" rx="8"/>
+<text class="d-title" x="760.0" y="237.0" text-anchor="middle">Run fallback, save result</text>
+<text class="d-sub" x="760.0" y="253.0" text-anchor="middle">item done · degraded · heal() redoes it</text>
+</g>
+<path class="d-edge-warn" d="M500,240.0 L610,240.0" marker-end="url(#flow-head-warn)"/>
+<text class="d-label-warn" x="555.0" y="232.0" text-anchor="middle">yes</text>
+<g class="d-park">
+<rect class="d-box" x="610" y="306" width="300" height="52" rx="8"/>
+<text class="d-title" x="760.0" y="329.0" text-anchor="middle">Park the item</text>
+<text class="d-sub" x="760.0" y="345.0" text-anchor="middle">until a breaker reopens · resume()</text>
+</g>
+<path class="d-edge-park" d="M500,332.0 L610,332.0" marker-end="url(#flow-head-park)"/>
+<text class="d-label-park" x="555.0" y="324.0" text-anchor="middle">yes</text>
+<g class="d-bad">
+<rect class="d-box" x="610" y="398" width="300" height="52" rx="8"/>
+<text class="d-title" x="760.0" y="421.0" text-anchor="middle">Halt the run, send alert</text>
+<text class="d-sub" x="760.0" y="437.0" text-anchor="middle">next run health-checks first</text>
+</g>
+<path class="d-edge-bad" d="M500,424.0 L610,424.0" marker-end="url(#flow-head-bad)"/>
+<text class="d-label-bad" x="555.0" y="416.0" text-anchor="middle">yes</text>
+<g>
+<rect class="d-box" x="610" y="490" width="300" height="52" rx="8"/>
+<text class="d-title" x="760.0" y="513.0" text-anchor="middle">Rerun the whole item</text>
+<text class="d-sub" x="760.0" y="529.0" text-anchor="middle">saved steps are reused</text>
+</g>
+<path class="d-edge" d="M500,516.0 L610,516.0" marker-end="url(#flow-head-plain)"/>
+<text class="d-label" x="555.0" y="508.0" text-anchor="middle">yes</text>
+<path class="d-edge" d="M350.0,82 L350.0,122" marker-end="url(#flow-head-plain)"/>
+<text class="d-label" x="358.0" y="106.0" text-anchor="start">no</text>
+<path class="d-edge" d="M350.0,174 L350.0,214" marker-end="url(#flow-head-plain)"/>
+<text class="d-label" x="358.0" y="198.0" text-anchor="start">retries exhausted, or no provider</text>
+<path class="d-edge" d="M350.0,266 L350.0,306" marker-end="url(#flow-head-plain)"/>
+<text class="d-label" x="358.0" y="290.0" text-anchor="start">no</text>
+<path class="d-edge" d="M350.0,358 L350.0,398" marker-end="url(#flow-head-plain)"/>
+<text class="d-label" x="358.0" y="382.0" text-anchor="start">no: retries exhausted</text>
+<path class="d-edge" d="M350.0,450 L350.0,490" marker-end="url(#flow-head-plain)"/>
+<text class="d-label" x="358.0" y="474.0" text-anchor="start">no</text>
+<path class="d-edge-bad" d="M350.0,542 L350.0,582" marker-end="url(#flow-head-bad)"/>
+<text class="d-label-bad" x="358.0" y="566.0" text-anchor="start">no</text>
+<g class="d-bad">
+<rect class="d-box" x="200" y="582" width="300" height="52" rx="8"/>
+<text class="d-title" x="350.0" y="605.0" text-anchor="middle">Item failed</text>
+<text class="d-sub" x="350.0" y="621.0" text-anchor="middle">the next run_many() retries it</text>
+</g>
+<path class="d-edge-accent" d="M200,160 L150,160 L150,136 L200,136" marker-end="url(#flow-head-accent)"/>
+<text class="d-label-accent" x="142" y="144" text-anchor="end">retryable error,</text>
+<text class="d-label-accent" x="142" y="158" text-anchor="end">attempts left:</text>
+<text class="d-label-accent" x="142" y="172" text-anchor="end">back off, run again</text>
+<path class="d-edge" d="M240,174 L240,194 L60,194 L60,424 L200,424" marker-end="url(#flow-head-plain)"/>
+<text class="d-label" x="68" y="300" text-anchor="start">non-retryable</text>
+<text class="d-label" x="68" y="314" text-anchor="start">error</text>
+</svg>

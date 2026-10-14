@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 640" width="1060" height="640" role="img" aria-label="Architecture: the engine calls back into your workflow and step functions, and every status change is written to one SQLite file."><title>Architecture: the engine calls back into your workflow and step functions, and every status change is written to one SQLite file.</title><style>svg { --d-paper: #fbfcfe; --d-panel: #eef1f7; --d-line: #c3cad8; --d-ink: #1b2130; --d-muted: #5a6377; --d-accent: #3554d1; --d-ok: #1d7f53; --d-ok-bg: #e3f3ea; --d-warn: #9a6410; --d-warn-bg: #fbf0d9; --d-park: #2f6ea8; --d-park-bg: #e3eef9; --d-bad: #b8382f; --d-bad-bg: #fbe6e3; }@media (prefers-color-scheme: dark) { svg { --d-paper: #10141c; --d-panel: #181e2b; --d-line: #39425a; --d-ink: #e5e9f2; --d-muted: #97a1b6; --d-accent: #8ea5ff; --d-ok: #5fca92; --d-ok-bg: #132a1e; --d-warn: #e2b35f; --d-warn-bg: #2d2412; --d-park: #82b6ec; --d-park-bg: #132235; --d-bad: #f18a7f; --d-bad-bg: #331715; } }
+.d-bg { fill: var(--d-paper); }
+.d-band { fill: var(--d-panel); }
+.d-band-label { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; letter-spacing: 0.1em; fill: var(--d-muted); }
+.d-box { fill: var(--d-paper); stroke: var(--d-line); stroke-width: 1.25; }
+.d-q { fill: var(--d-panel); stroke: var(--d-line); stroke-width: 1.25; stroke-dasharray: 4 3; }
+.d-name { font: 600 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: var(--d-ink); }
+.d-title { font: 600 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-ink); }
+.d-sub { font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-muted); }
+.d-edge { stroke: var(--d-muted); stroke-width: 1.5; fill: none; }
+.d-edge-accent { stroke: var(--d-accent); stroke-width: 2; fill: none; }
+.d-label { font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-muted); }
+.d-label-accent { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-accent); }
+.d-head { fill: var(--d-muted); }
+.d-head-accent { fill: var(--d-accent); }
+.d-dot { fill: var(--d-ink); }
+
+.d-ok .d-box { fill: var(--d-ok-bg); stroke: var(--d-ok); }
+.d-ok .d-title, .d-ok .d-name { fill: var(--d-ok); }
+.d-edge-ok { stroke: var(--d-ok); stroke-width: 1.5; fill: none; }
+.d-head-ok { fill: var(--d-ok); }
+.d-label-ok { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-ok); }
+.d-warn .d-box { fill: var(--d-warn-bg); stroke: var(--d-warn); }
+.d-warn .d-title, .d-warn .d-name { fill: var(--d-warn); }
+.d-edge-warn { stroke: var(--d-warn); stroke-width: 1.5; fill: none; }
+.d-head-warn { fill: var(--d-warn); }
+.d-label-warn { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-warn); }
+.d-park .d-box { fill: var(--d-park-bg); stroke: var(--d-park); }
+.d-park .d-title, .d-park .d-name { fill: var(--d-park); }
+.d-edge-park { stroke: var(--d-park); stroke-width: 1.5; fill: none; }
+.d-head-park { fill: var(--d-park); }
+.d-label-park { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-park); }
+.d-bad .d-box { fill: var(--d-bad-bg); stroke: var(--d-bad); }
+.d-bad .d-title, .d-bad .d-name { fill: var(--d-bad); }
+.d-edge-bad { stroke: var(--d-bad); stroke-width: 1.5; fill: none; }
+.d-head-bad { fill: var(--d-bad); }
+.d-label-bad { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-bad); }</style><defs><marker id="arch-head-plain" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="arch-head-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="arch-head-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="arch-head-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-warn" d="M0,0 L10,5 L0,10 z"/></marker><marker id="arch-head-park" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-park" d="M0,0 L10,5 L0,10 z"/></marker><marker id="arch-head-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-bad" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="d-bg" x="0" y="0" width="1060" height="640" rx="14"/>
+<rect class="d-band" x="20" y="16" width="1020" height="124" rx="10"/>
+<text class="d-band-label" x="36" y="38">YOUR CODE</text>
+<g>
+<rect class="d-box" x="40" y="60" width="140" height="56" rx="8"/>
+<text class="d-title" x="110.0" y="85.0" text-anchor="middle">your script</text>
+<text class="d-sub" x="110.0" y="101.0" text-anchor="middle">calls run_many()</text>
+</g>
+<g>
+<rect class="d-box" x="250" y="60" width="140" height="56" rx="8"/>
+<text class="d-name" x="320.0" y="85.0" text-anchor="middle">Alerter</text>
+<text class="d-sub" x="320.0" y="101.0" text-anchor="middle">your subclass</text>
+</g>
+<g>
+<rect class="d-box" x="460" y="60" width="140" height="56" rx="8"/>
+<text class="d-name" x="530.0" y="85.0" text-anchor="middle">workflow fn</text>
+<text class="d-sub" x="530.0" y="101.0" text-anchor="middle">@workflow</text>
+</g>
+<g>
+<rect class="d-box" x="670" y="60" width="140" height="56" rx="8"/>
+<text class="d-name" x="740.0" y="85.0" text-anchor="middle">step fns</text>
+<text class="d-sub" x="740.0" y="101.0" text-anchor="middle">@step</text>
+</g>
+<g>
+<rect class="d-box" x="880" y="60" width="140" height="56" rx="8"/>
+<text class="d-name" x="950.0" y="85.0" text-anchor="middle">ProviderPool</text>
+<text class="d-sub" x="950.0" y="101.0" text-anchor="middle">your providers</text>
+</g>
+<rect class="d-band" x="20" y="172" width="1020" height="236" rx="10"/>
+<text class="d-band-label" x="36" y="194">ENGINE</text>
+<g>
+<rect class="d-box" x="40" y="212" width="140" height="56" rx="8"/>
+<text class="d-name" x="110.0" y="237.0" text-anchor="middle">Workflow</text>
+<text class="d-sub" x="110.0" y="253.0" text-anchor="middle">run_many()</text>
+</g>
+<g>
+<rect class="d-box" x="250" y="212" width="140" height="56" rx="8"/>
+<text class="d-name" x="320.0" y="237.0" text-anchor="middle">BatchRunner</text>
+<text class="d-sub" x="320.0" y="253.0" text-anchor="middle">queue · N workers</text>
+</g>
+<g>
+<rect class="d-box" x="460" y="212" width="140" height="56" rx="8"/>
+<text class="d-name" x="530.0" y="237.0" text-anchor="middle">ItemProcessor</text>
+<text class="d-sub" x="530.0" y="253.0" text-anchor="middle">one item, retries</text>
+</g>
+<g>
+<rect class="d-box" x="670" y="212" width="140" height="56" rx="8"/>
+<text class="d-name" x="740.0" y="237.0" text-anchor="middle">StepExecutor</text>
+<text class="d-sub" x="740.0" y="253.0" text-anchor="middle">checkpoint · retry</text>
+</g>
+<g>
+<rect class="d-box" x="40" y="320" width="140" height="56" rx="8"/>
+<text class="d-name" x="110.0" y="345.0" text-anchor="middle">WorkflowRecovery</text>
+<text class="d-sub" x="110.0" y="361.0" text-anchor="middle">resume() · heal()</text>
+</g>
+<g>
+<rect class="d-box" x="250" y="320" width="140" height="56" rx="8"/>
+<text class="d-name" x="320.0" y="345.0" text-anchor="middle">CriticalRegistry</text>
+<text class="d-sub" x="320.0" y="361.0" text-anchor="middle">health checks</text>
+</g>
+<rect class="d-band" x="20" y="440" width="1020" height="184" rx="10"/>
+<text class="d-band-label" x="36" y="462">STORAGE</text>
+<g>
+<rect class="d-box" x="40" y="484" width="980" height="40" rx="8"/>
+<text class="d-name" x="530.0" y="508.5" text-anchor="middle">CheckpointStore</text>
+</g>
+<path class="d-edge" d="M115,524 L115,552"/>
+<g>
+<rect class="d-box" x="40" y="552" width="150" height="32" rx="8"/>
+<text class="d-name" x="115.0" y="572.5" text-anchor="middle">runs</text>
+</g>
+<path class="d-edge" d="M281,524 L281,552"/>
+<g>
+<rect class="d-box" x="206" y="552" width="150" height="32" rx="8"/>
+<text class="d-name" x="281.0" y="572.5" text-anchor="middle">items</text>
+</g>
+<path class="d-edge" d="M447,524 L447,552"/>
+<g>
+<rect class="d-box" x="372" y="552" width="150" height="32" rx="8"/>
+<text class="d-name" x="447.0" y="572.5" text-anchor="middle">steps</text>
+</g>
+<path class="d-edge" d="M613,524 L613,552"/>
+<g>
+<rect class="d-box" x="538" y="552" width="150" height="32" rx="8"/>
+<text class="d-name" x="613.0" y="572.5" text-anchor="middle">audit</text>
+</g>
+<path class="d-edge" d="M779,524 L779,552"/>
+<g>
+<rect class="d-box" x="704" y="552" width="150" height="32" rx="8"/>
+<text class="d-name" x="779.0" y="572.5" text-anchor="middle">providers</text>
+</g>
+<path class="d-edge" d="M945,524 L945,552"/>
+<g>
+<rect class="d-box" x="870" y="552" width="150" height="32" rx="8"/>
+<text class="d-name" x="945.0" y="572.5" text-anchor="middle">breakers</text>
+</g>
+<text class="d-label" x="530" y="608" text-anchor="middle">state.db · SQLite in WAL mode</text>
+<path class="d-edge-accent" d="M110.0,116 L110.0,212" marker-end="url(#arch-head-accent)"/>
+<text class="d-label-accent" x="118.0" y="166" text-anchor="start">run_many()</text>
+<path class="d-edge-accent" d="M180,240 L250,240" marker-end="url(#arch-head-accent)"/>
+<text class="d-label-accent" x="215.0" y="232" text-anchor="middle">items</text>
+<path class="d-edge-accent" d="M390,240 L460,240" marker-end="url(#arch-head-accent)"/>
+<text class="d-label-accent" x="425.0" y="232" text-anchor="middle">each item</text>
+<path class="d-edge-accent" d="M530.0,212 L530.0,116" marker-end="url(#arch-head-accent)"/>
+<text class="d-label-accent" x="538.0" y="166" text-anchor="start">calls per item</text>
+<path class="d-edge-accent" d="M600,88 L670,88" marker-end="url(#arch-head-accent)"/>
+<text class="d-label-accent" x="635.0" y="80" text-anchor="middle">calls</text>
+<path class="d-edge-accent" d="M740.0,116 L740.0,212" marker-end="url(#arch-head-accent)"/>
+<text class="d-label-accent" x="748.0" y="166" text-anchor="start">wrapped by</text>
+<path class="d-edge-accent" d="M810,88 L880,88" marker-end="url(#arch-head-accent)"/>
+<text class="d-label-accent" x="845.0" y="80" text-anchor="middle">pool.call()</text>
+<path class="d-edge" d="M320.0,212 L320.0,116" marker-end="url(#arch-head-plain)"/>
+<text class="d-label" x="328.0" y="166" text-anchor="start">halted / recovered alerts</text>
+<path class="d-edge" d="M110.0,320 L110.0,268" marker-end="url(#arch-head-plain)"/>
+<text class="d-label" x="118.0" y="298" text-anchor="start">re-runs by name</text>
+<path class="d-edge" d="M320.0,268 L320.0,320" marker-end="url(#arch-head-plain)"/>
+<text class="d-label" x="328.0" y="298" text-anchor="start">if halted: check first</text>
+<path class="d-edge" d="M110.0,376 L110.0,484" marker-end="url(#arch-head-plain)"/>
+<text class="d-label" x="118.0" y="398" text-anchor="start">reads unfinished, degraded</text>
+<path class="d-edge" d="M530.0,268 L530.0,484" marker-end="url(#arch-head-plain)"/>
+<text class="d-label" x="538.0" y="360" text-anchor="start">item status</text>
+<path class="d-edge" d="M740.0,268 L740.0,484" marker-end="url(#arch-head-plain)"/>
+<text class="d-label" x="748.0" y="360" text-anchor="start">step checkpoints</text>
+<path class="d-edge" d="M950.0,116 L950.0,484" marker-end="url(#arch-head-plain)"/>
+<text class="d-label" x="958.0" y="300" text-anchor="start">breaker state</text>
+</svg>

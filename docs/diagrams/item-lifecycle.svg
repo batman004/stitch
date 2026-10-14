@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" role="img" aria-label="Item lifecycle: running items end done, degraded, parked or failed; heal(), resume() and the next run_many() send them back to running."><title>Item lifecycle: running items end done, degraded, parked or failed; heal(), resume() and the next run_many() send them back to running.</title><style>svg { --d-paper: #fbfcfe; --d-panel: #eef1f7; --d-line: #c3cad8; --d-ink: #1b2130; --d-muted: #5a6377; --d-accent: #3554d1; --d-ok: #1d7f53; --d-ok-bg: #e3f3ea; --d-warn: #9a6410; --d-warn-bg: #fbf0d9; --d-park: #2f6ea8; --d-park-bg: #e3eef9; --d-bad: #b8382f; --d-bad-bg: #fbe6e3; }@media (prefers-color-scheme: dark) { svg { --d-paper: #10141c; --d-panel: #181e2b; --d-line: #39425a; --d-ink: #e5e9f2; --d-muted: #97a1b6; --d-accent: #8ea5ff; --d-ok: #5fca92; --d-ok-bg: #132a1e; --d-warn: #e2b35f; --d-warn-bg: #2d2412; --d-park: #82b6ec; --d-park-bg: #132235; --d-bad: #f18a7f; --d-bad-bg: #331715; } }
+.d-bg { fill: var(--d-paper); }
+.d-band { fill: var(--d-panel); }
+.d-band-label { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; letter-spacing: 0.1em; fill: var(--d-muted); }
+.d-box { fill: var(--d-paper); stroke: var(--d-line); stroke-width: 1.25; }
+.d-q { fill: var(--d-panel); stroke: var(--d-line); stroke-width: 1.25; stroke-dasharray: 4 3; }
+.d-name { font: 600 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: var(--d-ink); }
+.d-title { font: 600 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-ink); }
+.d-sub { font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-muted); }
+.d-edge { stroke: var(--d-muted); stroke-width: 1.5; fill: none; }
+.d-edge-accent { stroke: var(--d-accent); stroke-width: 2; fill: none; }
+.d-label { font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-muted); }
+.d-label-accent { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-accent); }
+.d-head { fill: var(--d-muted); }
+.d-head-accent { fill: var(--d-accent); }
+.d-dot { fill: var(--d-ink); }
+
+.d-ok .d-box { fill: var(--d-ok-bg); stroke: var(--d-ok); }
+.d-ok .d-title, .d-ok .d-name { fill: var(--d-ok); }
+.d-edge-ok { stroke: var(--d-ok); stroke-width: 1.5; fill: none; }
+.d-head-ok { fill: var(--d-ok); }
+.d-label-ok { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-ok); }
+.d-warn .d-box { fill: var(--d-warn-bg); stroke: var(--d-warn); }
+.d-warn .d-title, .d-warn .d-name { fill: var(--d-warn); }
+.d-edge-warn { stroke: var(--d-warn); stroke-width: 1.5; fill: none; }
+.d-head-warn { fill: var(--d-warn); }
+.d-label-warn { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-warn); }
+.d-park .d-box { fill: var(--d-park-bg); stroke: var(--d-park); }
+.d-park .d-title, .d-park .d-name { fill: var(--d-park); }
+.d-edge-park { stroke: var(--d-park); stroke-width: 1.5; fill: none; }
+.d-head-park { fill: var(--d-park); }
+.d-label-park { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-park); }
+.d-bad .d-box { fill: var(--d-bad-bg); stroke: var(--d-bad); }
+.d-bad .d-title, .d-bad .d-name { fill: var(--d-bad); }
+.d-edge-bad { stroke: var(--d-bad); stroke-width: 1.5; fill: none; }
+.d-head-bad { fill: var(--d-bad); }
+.d-label-bad { font: 600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; fill: var(--d-bad); }</style><defs><marker id="life-head-plain" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="life-head-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="life-head-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="life-head-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-warn" d="M0,0 L10,5 L0,10 z"/></marker><marker id="life-head-park" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-park" d="M0,0 L10,5 L0,10 z"/></marker><marker id="life-head-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="d-head-bad" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="d-bg" x="0" y="0" width="900" height="400" rx="14"/>
+<g class="d-park">
+<rect class="d-box" x="24" y="176" width="160" height="48" rx="8"/>
+<text class="d-name" x="104.0" y="197.0" text-anchor="middle">parked</text>
+<text class="d-sub" x="104.0" y="213.0" text-anchor="middle">has a retry time</text>
+</g>
+<g>
+<rect class="d-box" x="344" y="168" width="180" height="64" rx="8"/>
+<text class="d-name" x="434.0" y="197.0" text-anchor="middle">running</text>
+<text class="d-sub" x="434.0" y="213.0" text-anchor="middle">after a crash: resume()</text>
+</g>
+<g class="d-ok">
+<rect class="d-box" x="700" y="40" width="176" height="48" rx="8"/>
+<text class="d-name" x="788.0" y="61.0" text-anchor="middle">done</text>
+<text class="d-sub" x="788.0" y="77.0" text-anchor="middle">next run_many() skips it</text>
+</g>
+<g class="d-warn">
+<rect class="d-box" x="700" y="176" width="176" height="48" rx="8"/>
+<text class="d-name" x="788.0" y="197.0" text-anchor="middle">done · degraded</text>
+<text class="d-sub" x="788.0" y="213.0" text-anchor="middle">a fallback was used</text>
+</g>
+<g class="d-bad">
+<rect class="d-box" x="700" y="320" width="176" height="48" rx="8"/>
+<text class="d-name" x="788.0" y="341.0" text-anchor="middle">failed</text>
+<text class="d-sub" x="788.0" y="357.0" text-anchor="middle">error is saved</text>
+</g>
+<circle class="d-dot" cx="380" cy="112" r="7"/>
+<path class="d-edge" d="M380,119 L380,168" marker-end="url(#life-head-plain)"/>
+<text class="d-label" x="372" y="146" text-anchor="end">run_many() picks it up</text>
+<path class="d-edge-ok" d="M500,168 L500,64 L700,64" marker-end="url(#life-head-ok)"/>
+<text class="d-label-ok" x="600" y="56" text-anchor="middle">every step passed</text>
+<path class="d-edge-warn" d="M524,190 L700,190" marker-end="url(#life-head-warn)"/>
+<text class="d-label-warn" x="612" y="182" text-anchor="middle">a step used its fallback</text>
+<path class="d-edge" d="M700,212 L524,212" marker-end="url(#life-head-plain)"/>
+<text class="d-label" x="612" y="230" text-anchor="middle">heal() redoes it</text>
+<path class="d-edge-bad" d="M500,232 L500,336 L700,336" marker-end="url(#life-head-bad)"/>
+<text class="d-label-bad" x="605" y="328" text-anchor="middle">step failed, no item retries left</text>
+<path class="d-edge" d="M700,356 L470,356 L470,232" marker-end="url(#life-head-plain)"/>
+<text class="d-label" x="585" y="374" text-anchor="middle">next run_many()</text>
+<path class="d-edge-park" d="M344,190 L184,190" marker-end="url(#life-head-park)"/>
+<text class="d-label-park" x="264" y="170" text-anchor="middle">no provider</text>
+<text class="d-label-park" x="264" y="182" text-anchor="middle">and no fallback</text>
+<path class="d-edge" d="M184,212 L344,212" marker-end="url(#life-head-plain)"/>
+<text class="d-label" x="264" y="230" text-anchor="middle">resume(), run_many(),</text>
+<text class="d-label" x="264" y="244" text-anchor="middle">or wait_for_parked</text>
+</svg>
