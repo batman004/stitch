@@ -28,7 +28,9 @@ class StepRepository:
         )
         return [self._to_record(row) for row in rows]
 
-    def mark_started(self, run_id: str, item_key: str, step_name: str, sequence: int) -> None:
+    def mark_started(
+        self, run_id: str, item_key: str, step_name: str, sequence: int
+    ) -> None:
         self.database.execute(
             "INSERT INTO steps (run_id, item_key, step_name, sequence, status, started_at) "
             "VALUES (?, ?, ?, ?, 'running', ?) "
@@ -37,18 +39,38 @@ class StepRepository:
             (run_id, item_key, step_name, sequence, time.time()),
         )
 
-    def mark_done(self, run_id: str, item_key: str, step_name: str, result: Any, attempts: int, degraded: bool) -> None:
+    def mark_done(
+        self,
+        run_id: str,
+        item_key: str,
+        step_name: str,
+        result: Any,
+        attempts: int,
+        degraded: bool,
+    ) -> None:
         status = "degraded" if degraded else "done"
         self.database.execute(
             "UPDATE steps SET status = ?, result = ?, attempts = ?, error = NULL, finished_at = ? "
             "WHERE run_id = ? AND item_key = ? AND step_name = ?",
-            (status, json.dumps(result), attempts, time.time(), run_id, item_key, step_name),
+            (
+                status,
+                json.dumps(result),
+                attempts,
+                time.time(),
+                run_id,
+                item_key,
+                step_name,
+            ),
         )
 
-    def mark_failed(self, run_id: str, item_key: str, step_name: str, error: str, attempts: int) -> None:
+    def mark_failed(
+        self, run_id: str, item_key: str, step_name: str, error: str, attempts: int
+    ) -> None:
         self._mark_unfinished(run_id, item_key, step_name, "failed", error, attempts)
 
-    def mark_waiting(self, run_id: str, item_key: str, step_name: str, error: str, attempts: int) -> None:
+    def mark_waiting(
+        self, run_id: str, item_key: str, step_name: str, error: str, attempts: int
+    ) -> None:
         self._mark_unfinished(run_id, item_key, step_name, "waiting", error, attempts)
 
     def first_degraded_sequence(self, run_id: str, item_key: str) -> int | None:
@@ -58,7 +80,9 @@ class StepRepository:
         )
         return row[0]
 
-    def names_from_sequence(self, run_id: str, item_key: str, sequence: int) -> list[str]:
+    def names_from_sequence(
+        self, run_id: str, item_key: str, sequence: int
+    ) -> list[str]:
         rows = self.database.fetch_all(
             "SELECT step_name FROM steps WHERE run_id = ? AND item_key = ? AND sequence >= ? ORDER BY sequence",
             (run_id, item_key, sequence),
@@ -71,7 +95,15 @@ class StepRepository:
             (run_id, item_key, sequence),
         )
 
-    def _mark_unfinished(self, run_id: str, item_key: str, step_name: str, status: str, error: str, attempts: int) -> None:
+    def _mark_unfinished(
+        self,
+        run_id: str,
+        item_key: str,
+        step_name: str,
+        status: str,
+        error: str,
+        attempts: int,
+    ) -> None:
         self.database.execute(
             "UPDATE steps SET status = ?, error = ?, attempts = ?, finished_at = ? "
             "WHERE run_id = ? AND item_key = ? AND step_name = ?",
@@ -80,4 +112,12 @@ class StepRepository:
 
     def _to_record(self, row: tuple) -> StepRecord:
         item_key, step_name, sequence, status, attempts, result_text, error = row
-        return StepRecord(item_key, step_name, sequence, status, attempts, from_json_text(result_text), error)
+        return StepRecord(
+            item_key,
+            step_name,
+            sequence,
+            status,
+            attempts,
+            from_json_text(result_text),
+            error,
+        )

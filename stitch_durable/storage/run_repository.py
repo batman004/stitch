@@ -9,7 +9,9 @@ class RunRepository:
         self.database = database
 
     def open_run(self, run_id: str, workflow_name: str, parameters: dict) -> str | None:
-        existing = self.database.fetch_one("SELECT status FROM runs WHERE run_id = ?", (run_id,))
+        existing = self.database.fetch_one(
+            "SELECT status FROM runs WHERE run_id = ?", (run_id,)
+        )
         now = time.time()
         if existing is None:
             self.database.execute(
@@ -26,7 +28,8 @@ class RunRepository:
 
     def finish_run(self, run_id: str) -> None:
         self.database.execute(
-            "UPDATE runs SET status = 'done', updated_at = ? WHERE run_id = ?", (time.time(), run_id)
+            "UPDATE runs SET status = 'done', updated_at = ? WHERE run_id = ?",
+            (time.time(), run_id),
         )
 
     def mark_halted(self, run_id: str, step_name: str, reason: str) -> None:
@@ -37,7 +40,8 @@ class RunRepository:
 
     def get_halt(self, run_id: str) -> tuple[str, str] | None:
         return self.database.fetch_one(
-            "SELECT halted_step, halt_reason FROM runs WHERE run_id = ? AND status = 'halted'", (run_id,)
+            "SELECT halted_step, halt_reason FROM runs WHERE run_id = ? AND status = 'halted'",
+            (run_id,),
         )
 
     def list_runs(self) -> list[tuple[str, str, str]]:

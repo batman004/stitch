@@ -59,7 +59,13 @@ class Workflow:
             alerter=alerter,
         )
         runner = BatchRunner(
-            self.name, batch_label or self.batch_label, self.function, self.key_function, store, reporter, options
+            self.name,
+            batch_label or self.batch_label,
+            self.function,
+            self.key_function,
+            store,
+            reporter,
+            options,
         )
         return await runner.run(items)
 

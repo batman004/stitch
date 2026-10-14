@@ -4,7 +4,7 @@ import time
 import unittest
 from pathlib import Path
 
-from stitch import (
+from stitch_durable import (
     BreakerTuning,
     CheckpointStore,
     NoProviderAvailable,
@@ -48,7 +48,9 @@ class ControllableProvider:
 class ProviderTestCase(unittest.TestCase):
     def setUp(self):
         self.temporary_directory = tempfile.TemporaryDirectory()
-        self.store = CheckpointStore(Path(self.temporary_directory.name) / "checkpoints.db")
+        self.store = CheckpointStore(
+            Path(self.temporary_directory.name) / "checkpoints.db"
+        )
         self.providers = {}
         self.pool = ProviderPool(
             "llm",
@@ -70,12 +72,16 @@ class ProviderTestCase(unittest.TestCase):
 
         async def handler(item_key):
             try:
-                outcome["result"] = await self.pool.call(lambda provider: provider.complete(text))
+                outcome["result"] = await self.pool.call(
+                    lambda provider: provider.complete(text)
+                )
             except Exception as error:
                 outcome["error"] = error
 
         self.call_counter += 1
-        workflow = Workflow(handler, name="pool-test", key_function=str, registry=WorkflowRegistry())
+        workflow = Workflow(
+            handler, name="pool-test", key_function=str, registry=WorkflowRegistry()
+        )
         asyncio.run(workflow.run_many([str(self.call_counter)], self.store))
         if "error" in outcome:
             raise outcome["error"]
@@ -114,7 +120,9 @@ class FailoverTest(ProviderTestCase):
         time.sleep(0.25)
         self.call_pool()
         second_opening = self.store.breakers.get("llm", "primary")
-        self.assertEqual(second_opening.consecutive_opens, first_opening.consecutive_opens + 1)
+        self.assertEqual(
+            second_opening.consecutive_opens, first_opening.consecutive_opens + 1
+        )
         self.assertGreater(second_opening.retry_at - time.time(), 0.25)
 
     def test_no_provider_available_reports_when_to_retry(self):
@@ -143,13 +151,18 @@ class FailoverTest(ProviderTestCase):
 class WorkflowRecoveryTestCase(unittest.TestCase):
     def setUp(self):
         self.temporary_directory = tempfile.TemporaryDirectory()
-        self.store = CheckpointStore(Path(self.temporary_directory.name) / "checkpoints.db")
+        self.store = CheckpointStore(
+            Path(self.temporary_directory.name) / "checkpoints.db"
+        )
         self.registry = WorkflowRegistry()
         self.llm_healthy = False
         self.broken_step = False
         self.published = []
         self.pool = ProviderPool(
-            "llm", ControllableProvider, default_providers=[("only", 1, {})], tuning=TUNING
+            "llm",
+            ControllableProvider,
+            default_providers=[("only", 1, {})],
+            tuning=TUNING,
         )
         self.triage = self.build_triage_workflow()
 
@@ -198,7 +211,14 @@ class WorkflowRecoveryTestCase(unittest.TestCase):
 class DegradeAndHealTest(WorkflowRecoveryTestCase):
     def test_degraded_results_are_published_then_replaced_by_heal(self):
         statistics = self.run_events(["e1", "e2"])
-        self.assertEqual((statistics.items_done, statistics.items_degraded, statistics.steps_degraded), (2, 2, 2))
+        self.assertEqual(
+            (
+                statistics.items_done,
+                statistics.items_degraded,
+                statistics.steps_degraded,
+            ),
+            (2, 2, 2),
+        )
         self.assertEqual(self.published, [("e1", "degraded"), ("e2", "degraded")])
         self.llm_healthy = True
         time.sleep(0.35)
@@ -225,7 +245,15 @@ class DegradeAndHealTest(WorkflowRecoveryTestCase):
         self.run_events(["q"])
         records = self.store.audit.list_records(item_key="q")
         events = [record.event for record in records]
-        for expected in ("item_started", "step_started", "provider_failed", "breaker_opened", "step_degraded", "step_done", "item_done"):
+        for expected in (
+            "item_started",
+            "step_started",
+            "provider_failed",
+            "breaker_opened",
+            "step_degraded",
+            "step_done",
+            "item_done",
+        ):
             self.assertIn(expected, events)
         text = TraceRenderer().render(records)
         self.assertIn("breaker OPEN", text)
@@ -248,7 +276,9 @@ class ParkAndResumeTest(WorkflowRecoveryTestCase):
         async def strict_handler(event):
             return await strict_step(event)
 
-        strict_workflow = Workflow(strict_handler, name="strict-test", registry=self.registry)
+        strict_workflow = Workflow(
+            strict_handler, name="strict-test", registry=self.registry
+        )
 
         async def scenario():
             async def recover_later():
@@ -256,16 +286,30 @@ class ParkAndResumeTest(WorkflowRecoveryTestCase):
                 recovered["value"] = True
 
             recovery = asyncio.create_task(recover_later())
-            statistics = await strict_workflow.run_many([{"id": "a"}], self.store, wait_for_parked=True)
+            statistics = await strict_workflow.run_many(
+                [{"id": "a"}], self.store, wait_for_parked=True
+            )
             await recovery
             return statistics
 
         statistics = asyncio.run(scenario())
-        self.assertEqual((statistics.items_parked, statistics.items_done, statistics.parked_remaining), (1, 1, 0))
-        events = [record.event for record in self.store.audit.list_records(item_key="a")]
+        self.assertEqual(
+            (
+                statistics.items_parked,
+                statistics.items_done,
+                statistics.parked_remaining,
+            ),
+            (1, 1, 0),
+        )
+        events = [
+            record.event for record in self.store.audit.list_records(item_key="a")
+        ]
         self.assertIn("item_parked", events)
         self.assertIn("breaker_opened", events)
-        self.assertIn("cooldown_over", [record.event for record in self.store.audit.list_records()])
+        self.assertIn(
+            "cooldown_over",
+            [record.event for record in self.store.audit.list_records()],
+        )
 
     def test_resume_restarts_unfinished_items_from_their_stored_input(self):
         self.llm_healthy = True
@@ -273,10 +317,15 @@ class ParkAndResumeTest(WorkflowRecoveryTestCase):
         self.store.runs.open_run(run_id, "triage-test", {})
         self.store.items.mark_running(run_id, "e9", '{"id": "e9"}')
         self.store.steps.mark_started(run_id, "e9", "summarise", 1)
-        self.store.steps.mark_done(run_id, "e9", "summarise", {"summary": "kept", "source": "llm"}, 1, False)
+        self.store.steps.mark_done(
+            run_id, "e9", "summarise", {"summary": "kept", "source": "llm"}, 1, False
+        )
         outcomes = asyncio.run(WorkflowRecovery(self.store, self.registry).resume())
         (statistics,) = outcomes.values()
-        self.assertEqual((statistics.items_done, statistics.steps_skipped, statistics.steps_run), (1, 1, 1))
+        self.assertEqual(
+            (statistics.items_done, statistics.steps_skipped, statistics.steps_run),
+            (1, 1, 1),
+        )
         self.assertEqual(self.published, [("e9", "llm")])
 
 

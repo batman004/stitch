@@ -71,14 +71,24 @@ class ProviderPool:
         for name, priority, config in self.default_providers:
             store.providers.save(self.name, name, priority, config)
 
-    def register(self, store: CheckpointStore, name: str, priority: int, config: dict) -> None:
+    def register(
+        self, store: CheckpointStore, name: str, priority: int, config: dict
+    ) -> None:
         store.providers.save(self.name, name, priority, config)
-        store.audit.record(None, "provider_registered", {"provider": name, "pool": self.name, "priority": priority, **config})
+        store.audit.record(
+            None,
+            "provider_registered",
+            {"provider": name, "pool": self.name, "priority": priority, **config},
+        )
 
     async def call(self, operation: Callable[[Any], Awaitable[Any]]) -> Any:
         store = ExecutionContext.require_store()
         self.seed_defaults(store)
-        providers = [provider for provider in store.providers.list_providers(self.name) if provider.enabled]
+        providers = [
+            provider
+            for provider in store.providers.list_providers(self.name)
+            if provider.enabled
+        ]
         tracker = FailoverTracker()
         for provider in providers:
             breaker = store.breakers.get(self.name, provider.name)
@@ -88,7 +98,9 @@ class ProviderPool:
             probing = self._is_ready_for_probe(breaker)
             if probing and provider.name in self._providers_being_probed:
                 continue
-            attempt = await self._attempt_provider(store, provider, breaker, operation, probing)
+            attempt = await self._attempt_provider(
+                store, provider, breaker, operation, probing
+            )
             if attempt.succeeded:
                 self._report_success(provider.name, tracker)
                 return attempt.result
@@ -98,9 +110,14 @@ class ProviderPool:
     def snapshot(self, store: CheckpointStore) -> list[dict]:
         breakers = store.breakers.list_breakers(self.name)
         now = time.time()
-        return [self._describe_provider(provider, breakers.get(provider.name), now) for provider in store.providers.list_providers(self.name)]
+        return [
+            self._describe_provider(provider, breakers.get(provider.name), now)
+            for provider in store.providers.list_providers(self.name)
+        ]
 
-    async def _attempt_provider(self, store, provider: ProviderRecord, breaker, operation, probing: bool) -> ProviderAttempt:
+    async def _attempt_provider(
+        self, store, provider: ProviderRecord, breaker, operation, probing: bool
+    ) -> ProviderAttempt:
         if probing:
             self._providers_being_probed.add(provider.name)
             ExecutionContext.report_event("breaker_probe", provider=provider.name)
@@ -109,25 +126,55 @@ class ProviderPool:
         except ProviderError as error:
             return self._record_failure(store, provider.name, breaker, error, probing)
         except (TransientError, TimeoutError, ConnectionError) as error:
-            return self._record_failure(store, provider.name, breaker, ProviderDown(describe_error(error)), probing)
+            return self._record_failure(
+                store,
+                provider.name,
+                breaker,
+                ProviderDown(describe_error(error)),
+                probing,
+            )
         finally:
             self._providers_being_probed.discard(provider.name)
         self._record_success(store, provider.name, breaker)
         return ProviderAttempt(succeeded=True, result=result)
 
-    def _record_failure(self, store, name: str, breaker, error: ProviderError, probing: bool) -> ProviderAttempt:
+    def _record_failure(
+        self, store, name: str, breaker, error: ProviderError, probing: bool
+    ) -> ProviderAttempt:
         failures = (breaker.failures if breaker else 0) + 1
         consecutive_opens = breaker.consecutive_opens if breaker else 0
         reason = describe_error(error)
-        ExecutionContext.report_event("provider_failed", provider=name, error=reason, kind=type(error).__name__)
-        cooldown_seconds = self._cooldown_seconds(error, failures, consecutive_opens, probing)
+        ExecutionContext.report_event(
+            "provider_failed", provider=name, error=reason, kind=type(error).__name__
+        )
+        cooldown_seconds = self._cooldown_seconds(
+            error, failures, consecutive_opens, probing
+        )
         if cooldown_seconds is None:
-            store.breakers.save(BreakerRecord(self.name, name, "closed", failures, consecutive_opens, None, reason))
+            store.breakers.save(
+                BreakerRecord(
+                    self.name, name, "closed", failures, consecutive_opens, None, reason
+                )
+            )
             return ProviderAttempt(succeeded=False)
         reopen_at = time.time() + cooldown_seconds
-        store.breakers.save(BreakerRecord(self.name, name, "open", failures, consecutive_opens + 1, reopen_at, reason))
+        store.breakers.save(
+            BreakerRecord(
+                self.name,
+                name,
+                "open",
+                failures,
+                consecutive_opens + 1,
+                reopen_at,
+                reason,
+            )
+        )
         ExecutionContext.report_event(
-            "breaker_opened", provider=name, reason=reason, cooldown=cooldown_seconds, until=reopen_at
+            "breaker_opened",
+            provider=name,
+            reason=reason,
+            cooldown=cooldown_seconds,
+            until=reopen_at,
         )
         return ProviderAttempt(succeeded=False, reopen_at=reopen_at)
 
@@ -138,13 +185,18 @@ class ProviderPool:
         if breaker.state == "open":
             ExecutionContext.report_event("breaker_closed", provider=name)
 
-    def _cooldown_seconds(self, error: ProviderError, failures: int, consecutive_opens: int, probing: bool) -> float | None:
+    def _cooldown_seconds(
+        self, error: ProviderError, failures: int, consecutive_opens: int, probing: bool
+    ) -> float | None:
         if isinstance(error, QuotaExhausted):
             return error.retry_after or self.tuning.quota_cooldown_seconds
         if isinstance(error, RateLimited):
             return error.retry_after or self.tuning.rate_limit_cooldown_seconds
         if probing or failures >= self.tuning.failure_threshold:
-            return min(self.tuning.maximum_cooldown_seconds, self.tuning.base_cooldown_seconds * 2**consecutive_opens)
+            return min(
+                self.tuning.maximum_cooldown_seconds,
+                self.tuning.base_cooldown_seconds * 2**consecutive_opens,
+            )
         return None
 
     def _report_success(self, name: str, tracker: FailoverTracker) -> None:
@@ -152,15 +204,27 @@ class ProviderPool:
             ExecutionContext.report_event("provider_used", provider=name)
             return
         ExecutionContext.report_event(
-            "failover", from_provider=tracker.failed_over_from, provider=name, cause=tracker.cause
+            "failover",
+            from_provider=tracker.failed_over_from,
+            provider=name,
+            cause=tracker.cause,
         )
 
-    def _no_provider_error(self, providers: list[ProviderRecord], tracker: FailoverTracker) -> NoProviderAvailable:
+    def _no_provider_error(
+        self, providers: list[ProviderRecord], tracker: FailoverTracker
+    ) -> NoProviderAvailable:
         if not providers:
-            return NoProviderAvailable(f"pool {self.name!r} has no providers registered")
-        retry_at = tracker.earliest_retry_at or time.time() + self.tuning.base_cooldown_seconds
+            return NoProviderAvailable(
+                f"pool {self.name!r} has no providers registered"
+            )
+        retry_at = (
+            tracker.earliest_retry_at or time.time() + self.tuning.base_cooldown_seconds
+        )
         names = ", ".join(provider.name for provider in providers)
-        return NoProviderAvailable(f"no provider available in pool {self.name!r} ({names} all cooling down)", retry_at=retry_at)
+        return NoProviderAvailable(
+            f"no provider available in pool {self.name!r} ({names} all cooling down)",
+            retry_at=retry_at,
+        )
 
     def _is_cooling_down(self, breaker: BreakerRecord | None) -> bool:
         if breaker is None or breaker.state != "open":
@@ -168,16 +232,26 @@ class ProviderPool:
         return breaker.retry_at is not None and time.time() < breaker.retry_at
 
     def _is_ready_for_probe(self, breaker: BreakerRecord | None) -> bool:
-        return breaker is not None and breaker.state == "open" and not self._is_cooling_down(breaker)
+        return (
+            breaker is not None
+            and breaker.state == "open"
+            and not self._is_cooling_down(breaker)
+        )
 
     def _client_for(self, provider: ProviderRecord) -> Any:
         cache_key = (provider.name, repr(sorted(provider.config.items())))
         if cache_key not in self._clients:
-            self._clients[cache_key] = self.client_factory(provider.name, provider.config)
+            self._clients[cache_key] = self.client_factory(
+                provider.name, provider.config
+            )
         return self._clients[cache_key]
 
-    def _describe_provider(self, provider: ProviderRecord, breaker: BreakerRecord | None, now: float) -> dict:
-        retry_in = max(0.0, breaker.retry_at - now) if breaker and breaker.retry_at else 0.0
+    def _describe_provider(
+        self, provider: ProviderRecord, breaker: BreakerRecord | None, now: float
+    ) -> dict:
+        retry_in = (
+            max(0.0, breaker.retry_at - now) if breaker and breaker.retry_at else 0.0
+        )
         return {
             "name": provider.name,
             "priority": provider.priority,
@@ -188,7 +262,9 @@ class ProviderPool:
             "failures": breaker.failures if breaker else 0,
         }
 
-    def _provider_state(self, provider: ProviderRecord, breaker: BreakerRecord | None, now: float) -> str:
+    def _provider_state(
+        self, provider: ProviderRecord, breaker: BreakerRecord | None, now: float
+    ) -> str:
         if not provider.enabled:
             return "disabled"
         if breaker is None or breaker.state != "open":

@@ -21,12 +21,21 @@ class AuditRepository:
             "INSERT INTO audit (timestamp, run_id, item_key, step_name, event, attempt, provider, duration_seconds, detail) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                time.time(), run_id, fields["item"], fields["step"], event,
-                fields["attempt"], fields["provider"], fields["elapsed"], self._encode_detail(detail),
+                time.time(),
+                run_id,
+                fields["item"],
+                fields["step"],
+                event,
+                fields["attempt"],
+                fields["provider"],
+                fields["elapsed"],
+                self._encode_detail(detail),
             ),
         )
 
-    def list_records(self, item_key: str | None = None, after_record_id: int = 0) -> list[AuditRecord]:
+    def list_records(
+        self, item_key: str | None = None, after_record_id: int = 0
+    ) -> list[AuditRecord]:
         sql = (
             "SELECT record_id, timestamp, run_id, item_key, step_name, event, attempt, provider, duration_seconds, detail "
             "FROM audit WHERE record_id > ?"

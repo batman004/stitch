@@ -8,7 +8,9 @@ from .workflow import Workflow
 
 
 class WorkflowRecovery:
-    def __init__(self, store: CheckpointStore, registry: WorkflowRegistry | None = None):
+    def __init__(
+        self, store: CheckpointStore, registry: WorkflowRegistry | None = None
+    ):
         self.store = store
         self.registry = registry or WorkflowRegistry.default()
 
@@ -23,10 +25,19 @@ class WorkflowRecovery:
     ) -> dict[str, RunStatistics]:
         outcomes = {}
         for run_id, workflow in self._registered_runs(workflow_names):
-            inputs = [item.input_value for item in self.store.items.list_resumable(run_id)]
+            inputs = [
+                item.input_value for item in self.store.items.list_resumable(run_id)
+            ]
             if inputs:
                 outcomes[run_id] = await self._rerun(
-                    run_id, workflow, inputs, concurrency, reporter, alerter, wait_for_parked, maximum_parked_wait_seconds
+                    run_id,
+                    workflow,
+                    inputs,
+                    concurrency,
+                    reporter,
+                    alerter,
+                    wait_for_parked,
+                    maximum_parked_wait_seconds,
                 )
         return outcomes
 
@@ -46,26 +57,52 @@ class WorkflowRecovery:
                 self._invalidate_degraded_items(run_id, degraded_items)
                 inputs = [item.input_value for item in degraded_items]
                 outcomes[run_id] = await self._rerun(
-                    run_id, workflow, inputs, concurrency, reporter, alerter, wait_for_parked, maximum_parked_wait_seconds
+                    run_id,
+                    workflow,
+                    inputs,
+                    concurrency,
+                    reporter,
+                    alerter,
+                    wait_for_parked,
+                    maximum_parked_wait_seconds,
                 )
         return outcomes
 
     def _invalidate_degraded_items(self, run_id: str, degraded_items: list) -> None:
         for item in degraded_items:
             redone_steps = self.store.invalidate_degraded_steps(run_id, item.item_key)
-            self.store.audit.record(run_id, "heal_started", {"item": item.item_key, "redo": ",".join(redone_steps)})
+            self.store.audit.record(
+                run_id,
+                "heal_started",
+                {"item": item.item_key, "redo": ",".join(redone_steps)},
+            )
 
     async def _rerun(
-        self, run_id: str, workflow: Workflow, inputs: list, concurrency: int, reporter,
-        alerter, wait_for_parked: bool, maximum_parked_wait_seconds: float | None,
+        self,
+        run_id: str,
+        workflow: Workflow,
+        inputs: list,
+        concurrency: int,
+        reporter,
+        alerter,
+        wait_for_parked: bool,
+        maximum_parked_wait_seconds: float | None,
     ) -> RunStatistics:
         batch_label = run_id.split(":", 1)[1]
         return await workflow.run_many(
-            inputs, self.store, batch_label=batch_label, concurrency=concurrency, reporter=reporter,
-            alerter=alerter, wait_for_parked=wait_for_parked, maximum_parked_wait_seconds=maximum_parked_wait_seconds,
+            inputs,
+            self.store,
+            batch_label=batch_label,
+            concurrency=concurrency,
+            reporter=reporter,
+            alerter=alerter,
+            wait_for_parked=wait_for_parked,
+            maximum_parked_wait_seconds=maximum_parked_wait_seconds,
         )
 
-    def _registered_runs(self, workflow_names: list[str] | None) -> Iterator[tuple[str, Workflow]]:
+    def _registered_runs(
+        self, workflow_names: list[str] | None
+    ) -> Iterator[tuple[str, Workflow]]:
         for run_id, workflow_name, _ in self.store.runs.list_runs():
             workflow = self.registry.find(workflow_name)
             if workflow is None:

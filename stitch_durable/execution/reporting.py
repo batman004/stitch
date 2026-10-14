@@ -31,7 +31,9 @@ class Reporter:
 
     def _arguments_the_handler_accepts(self, handler, data: dict) -> dict:
         parameters = inspect.signature(handler).parameters.values()
-        if any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters):
+        if any(
+            parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters
+        ):
             return data
         accepted_names = {parameter.name for parameter in parameters}
         return {name: value for name, value in data.items() if name in accepted_names}

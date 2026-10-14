@@ -4,25 +4,43 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stitch-durable"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Resumable async Python workflows from the standard library alone: checkpoints, retries, audit trail, provider fallbacks"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
+authors = [{ name = "Yuvraj Singh Pathania" }]
 requires-python = ">=3.11"
 dependencies = []
 keywords = ["durable-execution", "checkpoint", "asyncio", "workflow", "retry", "circuit-breaker"]
 classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Framework :: AsyncIO",
+    "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
 ]
 
+[project.urls]
+Repository = "https://github.com/batman004/stitch"
+Issues = "https://github.com/batman004/stitch/issues"
+Changelog = "https://github.com/batman004/stitch/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "stitch_durable.__version__" }
+
 [tool.setuptools.packages.find]
-include = ["stitch*"]
+include = ["stitch_durable*"]
 
 [tool.setuptools.package-data]
-stitch = ["py.typed"]
+stitch_durable = ["py.typed"]
 
 [tool.ruff.lint]
 # Correctness rules only (pyflakes + pycodestyle errors); style rule sets are opt-in.

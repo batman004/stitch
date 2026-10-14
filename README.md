@@ -17,18 +17,18 @@
 **stitch** gives every async step a checkpoint, a retry budget, and a fallback — using nothing but the Python standard library. If a process crashes, a rerun picks up where it left off. If a dependency goes down, a circuit breaker parks or degrades the call and the batch keeps moving.
 
 ```bash
-pip install -e .
+pip install stitch-durable
 ```
 
 > [!NOTE]
-> Python 3.11+. Distribution name: `stitch-durable`. Import name: `stitch`. **Zero third-party dependencies.**
+> Python 3.11+. Distribution name: `stitch-durable`. Import name: `stitch_durable`. **Zero third-party dependencies.**
 
 ---
 
 ## Quick Start
 
 ```python
-from stitch import CheckpointStore, RetryPolicy, Workflow, step
+from stitch_durable import CheckpointStore, RetryPolicy, Workflow, step
 
 @step(retry_policy=RetryPolicy(retry_on=(OSError,)))
 async def download(article): ...
@@ -329,7 +329,7 @@ stateDiagram-v2
 
 ## Samples
 
-> Each program is self-contained. Run it where `import stitch` works. It writes `state.db` in the working directory. Delete that file before re-running — finished items are skipped by design.
+> Each program is self-contained. Run it where `import stitch_durable` works. It writes `state.db` in the working directory. Delete that file before re-running — finished items are skipped by design.
 
 ### 1 · Retry a step, then resume the failed item
 
@@ -338,7 +338,7 @@ stateDiagram-v2
 ```python
 import asyncio
 
-from stitch import CheckpointStore, PermanentError, Reporter, RetryPolicy, Workflow, step
+from stitch_durable import CheckpointStore, PermanentError, Reporter, RetryPolicy, Workflow, step
 
 download_attempts = {}
 search_down = {"b": True}
@@ -419,7 +419,7 @@ The only model is out of credits, so `summarise` stores a fallback and `publish`
 ```python
 import asyncio
 
-from stitch import (
+from stitch_durable import (
     BreakerTuning,
     CheckpointStore,
     ProviderPool,
@@ -522,7 +522,7 @@ asyncio.run(main())
 ```python
 import asyncio
 
-from stitch import CheckpointStore, ProviderPool, QuotaExhausted, Workflow, step
+from stitch_durable import CheckpointStore, ProviderPool, QuotaExhausted, Workflow, step
 
 
 class Client:
@@ -579,7 +579,7 @@ With a single provider and no fallback, the item is parked. Once the provider re
 ```python
 import asyncio
 
-from stitch import (
+from stitch_durable import (
     BreakerTuning,
     CheckpointStore,
     ProviderPool,
@@ -647,7 +647,7 @@ resumed 1
 ```python
 import asyncio
 
-from stitch import (
+from stitch_durable import (
     Alert,
     Alerter,
     CheckpointStore,

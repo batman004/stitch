@@ -14,7 +14,10 @@ class ProviderRepository:
             "SELECT pool_name, name, priority, enabled, config FROM providers WHERE pool_name = ? ORDER BY priority, name",
             (pool_name,),
         )
-        return [ProviderRecord(pool, name, priority, bool(enabled), json.loads(config)) for pool, name, priority, enabled, config in rows]
+        return [
+            ProviderRecord(pool, name, priority, bool(enabled), json.loads(config))
+            for pool, name, priority, enabled, config in rows
+        ]
 
     def save(self, pool_name: str, name: str, priority: int, config: dict) -> None:
         self.database.execute(
@@ -25,11 +28,16 @@ class ProviderRepository:
 
     def set_enabled(self, pool_name: str, name: str, enabled: bool) -> bool:
         cursor = self.database.execute(
-            "UPDATE providers SET enabled = ? WHERE pool_name = ? AND name = ?", (int(enabled), pool_name, name)
+            "UPDATE providers SET enabled = ? WHERE pool_name = ? AND name = ?",
+            (int(enabled), pool_name, name),
         )
         return cursor.rowcount > 0
 
     def delete(self, pool_name: str, name: str) -> bool:
-        cursor = self.database.execute("DELETE FROM providers WHERE pool_name = ? AND name = ?", (pool_name, name))
-        self.database.execute("DELETE FROM breakers WHERE pool_name = ? AND name = ?", (pool_name, name))
+        cursor = self.database.execute(
+            "DELETE FROM providers WHERE pool_name = ? AND name = ?", (pool_name, name)
+        )
+        self.database.execute(
+            "DELETE FROM breakers WHERE pool_name = ? AND name = ?", (pool_name, name)
+        )
         return cursor.rowcount > 0

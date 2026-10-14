@@ -43,8 +43,12 @@ class BatchRunner:
         self.options = options
         self.store = store
         run_id = f"{workflow_name}:{batch_label}"
-        self.session = RunSession(run_id, store, reporter or Reporter(), options.record_audit, options.alerter)
-        self.processor = ItemProcessor(self.session, handler, key_function, options.item_retry_policy)
+        self.session = RunSession(
+            run_id, store, reporter or Reporter(), options.record_audit, options.alerter
+        )
+        self.processor = ItemProcessor(
+            self.session, handler, key_function, options.item_retry_policy
+        )
 
     async def run(self, items: Iterable[Any] | AsyncIterable[Any]) -> RunStatistics:
         await self._require_healthy_resource()
@@ -52,7 +56,9 @@ class BatchRunner:
             self.session.run_id, self.workflow_name, self.options.parameters or {}
         )
         self.session.emit(
-            "run_started", run_id=self.session.run_id, concurrency=self.options.concurrency,
+            "run_started",
+            run_id=self.session.run_id,
+            concurrency=self.options.concurrency,
             resume=self._summarize_previous_run(previous_status),
         )
         token = ExecutionContext.bind_run(self.session)
@@ -79,11 +85,20 @@ class BatchRunner:
             raise HealthCheckFailed(step_name, problem)
         self.session.emit("run_recovered", step=step_name)
         title = f"{step_name} is healthy again, the run resumes"
-        self.session.send_alert(Alert("recovered", title, self.session.run_id, step_name, {}))
+        self.session.send_alert(
+            Alert("recovered", title, self.session.run_id, step_name, {})
+        )
 
     def _record_halt(self, failure: CriticalStepFailed) -> None:
-        self.store.runs.mark_halted(self.session.run_id, failure.step_name, str(failure))
-        self.session.emit("run_halted", step=failure.step_name, item=failure.item_key, error=str(failure))
+        self.store.runs.mark_halted(
+            self.session.run_id, failure.step_name, str(failure)
+        )
+        self.session.emit(
+            "run_halted",
+            step=failure.step_name,
+            item=failure.item_key,
+            error=str(failure),
+        )
 
     async def _process_items(self, items: Iterable[Any] | AsyncIterable[Any]) -> None:
         try:
@@ -122,13 +137,20 @@ class BatchRunner:
             delay_seconds = max(0.0, due_at - time.time())
             if deadline is not None and time.time() + delay_seconds > deadline:
                 return
-            self.session.emit("cooldown_wait", count=len(parked_items), delay=delay_seconds, until=due_at)
+            self.session.emit(
+                "cooldown_wait",
+                count=len(parked_items),
+                delay=delay_seconds,
+                until=due_at,
+            )
             await asyncio.sleep(delay_seconds + PARKED_WAKE_UP_MARGIN_SECONDS)
             await self._process_due_items(parked_items)
 
     async def _process_due_items(self, parked_items: list) -> None:
         cutoff = time.time() + PARKED_WAKE_UP_MARGIN_SECONDS
-        due_values = [parked.input_value for parked in parked_items if parked.retry_at <= cutoff]
+        due_values = [
+            parked.input_value for parked in parked_items if parked.retry_at <= cutoff
+        ]
         self.session.emit("cooldown_over", count=len(due_values))
         await self._process_items(due_values)
 
@@ -140,7 +162,9 @@ class BatchRunner:
 
     def _finish_run(self) -> RunStatistics:
         statistics = self.session.statistics
-        statistics.parked_remaining = len(self.store.items.list_parked(self.session.run_id))
+        statistics.parked_remaining = len(
+            self.store.items.list_parked(self.session.run_id)
+        )
         if statistics.items_failed == 0 and statistics.parked_remaining == 0:
             self.store.runs.finish_run(self.session.run_id)
         statistics.elapsed_seconds = time.monotonic() - statistics.started_at
@@ -165,7 +189,9 @@ class BatchRunner:
             "interrupted": interrupted,
         }
 
-    async def _as_async_iterator(self, items: Iterable[Any] | AsyncIterable[Any]) -> AsyncIterator[Any]:
+    async def _as_async_iterator(
+        self, items: Iterable[Any] | AsyncIterable[Any]
+    ) -> AsyncIterator[Any]:
         if isinstance(items, AsyncIterable):
             async for item in items:
                 yield item

@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from stitch import (
+from stitch_durable import (
     CheckpointStore,
     PermanentError,
     RetryPolicy,
@@ -13,7 +13,9 @@ from stitch import (
     step,
 )
 
-FAST_RETRY = RetryPolicy(maximum_attempts=3, base_delay_seconds=0.001, maximum_delay_seconds=0.001)
+FAST_RETRY = RetryPolicy(
+    maximum_attempts=3, base_delay_seconds=0.001, maximum_delay_seconds=0.001
+)
 
 
 class CallRecorder:
@@ -78,7 +80,13 @@ class EngineTestCase(unittest.TestCase):
         return store
 
     def build_workflow(self, handler=two_step_handler, **options):
-        return Workflow(handler, name="engine-test", key_function=str, registry=WorkflowRegistry(), **options)
+        return Workflow(
+            handler,
+            name="engine-test",
+            key_function=str,
+            registry=WorkflowRegistry(),
+            **options
+        )
 
     def run_items(self, items, handler=two_step_handler, **options):
         workflow = self.build_workflow(handler, **options.pop("workflow_options", {}))
@@ -94,7 +102,8 @@ class ResumeTest(EngineTestCase):
         statistics = self.run_items(["a", "b"])
         self.assertEqual(recorder.calls, [("second", "b")])
         self.assertEqual(
-            (statistics.items_skipped, statistics.items_done, statistics.steps_skipped), (1, 1, 1)
+            (statistics.items_skipped, statistics.items_done, statistics.steps_skipped),
+            (1, 1, 1),
         )
 
     def test_finished_run_does_nothing_again(self):
@@ -116,7 +125,10 @@ class ResumeTest(EngineTestCase):
             await first_step(item_key)
 
         self.run_items(["a"], handler=handler)
-        step_names = [record.step_name for record in self.open_store().steps.list_for_run("engine-test:default")]
+        step_names = [
+            record.step_name
+            for record in self.open_store().steps.list_for_run("engine-test:default")
+        ]
         self.assertEqual(step_names, ["first_step", "first_step#2"])
 
     def test_concurrent_run_processes_every_item(self):
@@ -128,7 +140,10 @@ class ResumeTest(EngineTestCase):
 
 class RetryTest(EngineTestCase):
     def test_step_retries_transient_errors_and_only_that_step_repeats(self):
-        recorder.failures[("second", "a")] = [TransientError("503"), TransientError("503")]
+        recorder.failures[("second", "a")] = [
+            TransientError("503"),
+            TransientError("503"),
+        ]
         statistics = self.run_items(["a"])
         self.assertEqual(statistics.step_retries, 2)
         self.assertEqual(recorder.calls.count(("first", "a")), 1)
@@ -142,7 +157,9 @@ class RetryTest(EngineTestCase):
     def test_item_retry_restarts_the_item_but_reuses_checkpoints(self):
         recorder.failures[("second", "a")] = [TransientError("503")]
         statistics = self.run_items(
-            ["a"], handler=fragile_handler, workflow_options={"item_retry_policy": FAST_RETRY}
+            ["a"],
+            handler=fragile_handler,
+            workflow_options={"item_retry_policy": FAST_RETRY},
         )
         self.assertEqual(statistics.item_retries, 1)
         self.assertEqual(statistics.items_done, 1)

@@ -30,7 +30,13 @@ class BreakerRepository:
             "consecutive_opens = excluded.consecutive_opens, retry_at = excluded.retry_at, "
             "reason = excluded.reason, updated_at = excluded.updated_at",
             (
-                record.pool_name, record.name, record.state, record.failures,
-                record.consecutive_opens, record.retry_at, record.reason, time.time(),
+                record.pool_name,
+                record.name,
+                record.state,
+                record.failures,
+                record.consecutive_opens,
+                record.retry_at,
+                record.reason,
+                time.time(),
             ),
         )

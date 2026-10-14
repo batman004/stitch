@@ -53,7 +53,9 @@ class PipelineHalted(Exception):
 
 class CriticalStepFailed(PipelineHalted):
     def __init__(self, step_name: str, item_key: str, cause: BaseException):
-        super().__init__(f"critical step {step_name} failed for {item_key}: {describe_error(cause)}")
+        super().__init__(
+            f"critical step {step_name} failed for {item_key}: {describe_error(cause)}"
+        )
         self.step_name = step_name
         self.item_key = item_key
         self.cause = cause
@@ -61,7 +63,9 @@ class CriticalStepFailed(PipelineHalted):
 
 class HealthCheckFailed(PipelineHalted):
     def __init__(self, step_name: str, reason: str):
-        super().__init__(f"the run is halted and the resource behind {step_name} is still unhealthy: {reason}")
+        super().__init__(
+            f"the run is halted and the resource behind {step_name} is still unhealthy: {reason}"
+        )
         self.step_name = step_name
         self.reason = reason
 

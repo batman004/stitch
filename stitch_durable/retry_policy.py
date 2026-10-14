@@ -15,7 +15,9 @@ class RetryPolicy:
         server_hint = getattr(error, "retry_after", None)
         if server_hint is not None:
             return float(server_hint)
-        ceiling = min(self.maximum_delay_seconds, self.base_delay_seconds * 2 ** (attempt - 1))
+        ceiling = min(
+            self.maximum_delay_seconds, self.base_delay_seconds * 2 ** (attempt - 1)
+        )
         return ceiling / 2 + random.uniform(0, ceiling / 2)
 
 
