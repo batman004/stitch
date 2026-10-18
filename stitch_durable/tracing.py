@@ -32,10 +32,19 @@ DEFAULT_STYLE = ("·", "2")
 
 
 class TraceRenderer:
+    """Formats audit records as a readable timeline, one line per event.
+
+    Example::
+
+        print(TraceRenderer().render(store.audit.list_records(item_key="a")))
+    """
+
     def __init__(self, use_color: bool = False):
+        """``use_color`` adds ANSI colours for terminals."""
         self.use_color = use_color
 
     def render(self, records: list[AuditRecord]) -> str:
+        """Return the timeline for ``records``: clock time, offset from the first record, a marker and a description."""
         if not records:
             return "no audit records"
         first_timestamp = records[0].timestamp

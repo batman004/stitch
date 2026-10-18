@@ -113,6 +113,32 @@ class ResumeTest(EngineTestCase):
         self.assertEqual(recorder.calls, [])
         self.assertEqual(statistics.items_skipped, 2)
 
+    def test_deleted_run_starts_from_scratch(self):
+        self.run_items(["a"])
+        self.run_items(["b"], batch_label="other")
+        store = self.open_store()
+        self.assertTrue(store.delete_run("engine-test:default"))
+        self.assertFalse(store.delete_run("engine-test:default"))
+        self.assertEqual(store.audit.list_records(item_key="a"), [])
+        recorder.calls.clear()
+        statistics = self.run_items(["a", "b"], batch_label="other")
+        self.assertEqual(recorder.calls, [("first", "a"), ("second", "a")])
+        self.assertEqual(statistics.items_skipped, 1)
+        recorder.calls.clear()
+        self.run_items(["a"])
+        self.assertEqual(recorder.calls, [("first", "a"), ("second", "a")])
+
+    def test_deleted_store_removes_its_files(self):
+        self.run_items(["a"])
+        for open_store in self.stores:
+            open_store.close()
+        store = self.open_store()
+        store.delete()
+        self.assertEqual(list(self.database_path.parent.iterdir()), [])
+        recorder.calls.clear()
+        self.run_items(["a"])
+        self.assertEqual(recorder.calls, [("first", "a"), ("second", "a")])
+
     def test_second_call_returns_the_stored_result_without_running_again(self):
         self.run_items(["a"])
         store = self.open_store()

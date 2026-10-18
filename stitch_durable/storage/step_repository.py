@@ -89,6 +89,9 @@ class StepRepository:
         )
         return [row[0] for row in rows]
 
+    def delete_run(self, run_id: str) -> None:
+        self.database.execute("DELETE FROM steps WHERE run_id = ?", (run_id,))
+
     def delete_from_sequence(self, run_id: str, item_key: str, sequence: int) -> None:
         self.database.execute(
             "DELETE FROM steps WHERE run_id = ? AND item_key = ? AND sequence >= ?",

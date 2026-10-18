@@ -36,6 +36,11 @@ class ItemContext:
 
 
 class ExecutionContext:
+    """Tracks the active run, item and step for the current async task.
+
+    The engine binds and releases these values; user code normally only reads them, for example ``ExecutionContext.current_step()`` to log the attempt number. Outside a workflow every ``current_*`` method returns ``None``.
+    """
+
     _run = contextvars.ContextVar("stitch_run", default=None)
     _item = contextvars.ContextVar("stitch_item", default=None)
     _step = contextvars.ContextVar("stitch_step", default=None)
@@ -66,18 +71,22 @@ class ExecutionContext:
 
     @classmethod
     def current_run(cls):
+        """Return the active run session, or ``None`` outside a workflow."""
         return cls._run.get()
 
     @classmethod
     def current_item(cls) -> ItemContext | None:
+        """Return the item being processed (``item_key``, ``degraded``), or ``None``."""
         return cls._item.get()
 
     @classmethod
     def current_step(cls) -> StepContext | None:
+        """Return the running step (``run_id``, ``item_key``, ``step_name``, ``attempt``), or ``None``."""
         return cls._step.get()
 
     @classmethod
     def require_store(cls) -> CheckpointStore:
+        """Return the active run's ``CheckpointStore``; raise ``RuntimeError`` outside a workflow."""
         session = cls._run.get()
         if session is None:
             raise RuntimeError("this call is only valid inside a running workflow")
@@ -85,6 +94,7 @@ class ExecutionContext:
 
     @classmethod
     def report_event(cls, event: str, **data: Any) -> None:
+        """Send ``event`` to the run's audit trail and reporter, adding the current item and step. Does nothing outside a workflow."""
         session = cls._run.get()
         if session is None:
             return

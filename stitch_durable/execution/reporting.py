@@ -6,6 +6,11 @@ from typing import Any
 
 @dataclass
 class RunStatistics:
+    """Counts for one ``run_many`` call, returned when it finishes.
+
+    ``items_skipped`` were already done before this call. ``items_degraded`` finished using at least one fallback. ``parked_remaining`` are still parked at the end. ``steps_skipped`` reused a checkpoint instead of running. ``failovers`` counts calls a ``ProviderPool`` answered with a provider other than the first one it tried.
+    """
+
     items_done: int = 0
     items_skipped: int = 0
     items_failed: int = 0
@@ -23,7 +28,19 @@ class RunStatistics:
 
 
 class Reporter:
+    """Receives live events from ``run_many``. Subclass it and add ``on_<event>`` methods for the events you want.
+
+    Event names match the audit trail, for example ``step_retry``, ``item_failed`` or ``failover``. Each handler gets only the keyword arguments it names, such as ``item``, ``step``, ``attempt``, ``error`` or ``delay``; add ``**data`` to receive all of them.
+
+    Example::
+
+        class LineReporter(Reporter):
+            def on_step_retry(self, step, attempt, error, delay):
+                print(f"{step} attempt {attempt} failed ({error}); retry in {delay:.2f}s")
+    """
+
     def emit(self, event: str, **data: Any) -> None:
+        """Call ``on_<event>`` with the fields it accepts; do nothing if there is no such method."""
         handler = getattr(self, f"on_{event}", None)
         if handler is None:
             return

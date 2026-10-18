@@ -1,3 +1,8 @@
+"""Durable, resumable async workflows backed by a single SQLite file.
+
+Mark each stage of a pipeline with ``@step`` and run the per-item function through ``Workflow.run_many``. Every step result is checkpointed, so a rerun skips finished work. ``RetryPolicy`` retries failures, ``degrade`` supplies a fallback, ``ProviderPool`` fails over between backends, and ``WorkflowRecovery`` resumes or heals earlier runs.
+"""
+
 from .alerts import Alert, Alerter
 from .critical import CriticalPolicy, CriticalRegistry
 from .errors import (

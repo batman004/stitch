@@ -44,6 +44,10 @@ class RunRepository:
             (run_id,),
         )
 
+    def delete(self, run_id: str) -> bool:
+        cursor = self.database.execute("DELETE FROM runs WHERE run_id = ?", (run_id,))
+        return cursor.rowcount > 0
+
     def list_runs(self) -> list[tuple[str, str, str]]:
         return self.database.fetch_all(
             "SELECT run_id, workflow, status FROM runs ORDER BY created_at"

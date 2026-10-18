@@ -33,6 +33,9 @@ class AuditRepository:
             ),
         )
 
+    def delete_run(self, run_id: str) -> None:
+        self.database.execute("DELETE FROM audit WHERE run_id = ?", (run_id,))
+
     def list_records(
         self, item_key: str | None = None, after_record_id: int = 0
     ) -> list[AuditRecord]:

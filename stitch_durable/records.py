@@ -38,6 +38,8 @@ class ParkedItem:
 
 @dataclass(frozen=True)
 class AuditRecord:
+    """One row of the audit trail. ``event`` names what happened, such as ``step_retry`` or ``breaker_opened``; ``detail`` holds the event's extra fields."""
+
     record_id: int
     timestamp: float
     run_id: str | None

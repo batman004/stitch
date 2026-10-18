@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `CheckpointStore.delete_run(run_id)` removes one run's items, checkpoints and audit records.
+- `CheckpointStore.delete()` closes the store and removes its SQLite files.
+- Docstrings on the public API for IDE hover help.
+- README use cases showing stitch added to existing pipelines.
+
 ## [0.1.0]
 
 Initial release.

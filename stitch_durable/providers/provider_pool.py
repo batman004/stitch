@@ -51,6 +51,23 @@ class FailoverTracker:
 
 
 class ProviderPool:
+    """Interchangeable backends (for example several LLM APIs) with failover and a circuit breaker per backend.
+
+    ``call`` tries providers in priority order and skips any whose breaker is open. Breaker state lives in the ``CheckpointStore``, so a cooldown survives a restart.
+
+    Example::
+
+        pool = ProviderPool(
+            "llm",
+            Client,
+            default_providers=[("primary", 1, {}), ("backup", 2, {"region": "eu"})],
+        )
+
+        @step
+        async def summarise(article):
+            return await pool.call(lambda client: client.complete(article["title"]))
+    """
+
     def __init__(
         self,
         name: str,
@@ -58,6 +75,10 @@ class ProviderPool:
         default_providers: Sequence[tuple[str, int, dict]] = (),
         tuning: BreakerTuning = BreakerTuning(),
     ):
+        """Describe a pool; nothing is stored until the first ``call``.
+
+        ``name`` identifies the pool in the store. ``client_factory(provider_name, config)`` builds a client for one provider; each client is built once and reused. ``default_providers`` is a list of ``(name, priority, config)`` tuples, lowest priority number first, written to the store the first time the pool is used there. ``tuning`` sets breaker thresholds and cooldowns.
+        """
         self.name = name
         self.client_factory = client_factory
         self.default_providers = list(default_providers)
@@ -66,6 +87,7 @@ class ProviderPool:
         self._providers_being_probed: set[str] = set()
 
     def seed_defaults(self, store: CheckpointStore) -> None:
+        """Write ``default_providers`` to ``store`` if the pool has no providers there yet."""
         if store.providers.list_providers(self.name):
             return
         for name, priority, config in self.default_providers:
@@ -74,6 +96,10 @@ class ProviderPool:
     def register(
         self, store: CheckpointStore, name: str, priority: int, config: dict
     ) -> None:
+        """Add or update a provider in ``store`` and record it in the audit trail.
+
+        Use this to change providers at runtime without editing code. ``priority`` orders providers, lowest first; ``config`` is passed to ``client_factory``.
+        """
         store.providers.save(self.name, name, priority, config)
         store.audit.record(
             None,
@@ -82,6 +108,12 @@ class ProviderPool:
         )
 
     async def call(self, operation: Callable[[Any], Awaitable[Any]]) -> Any:
+        """Run ``await operation(client)`` on the first available provider and return its result.
+
+        Must be called inside a running workflow, normally from a ``@step``. When a provider raises ``ProviderError``, ``TransientError``, ``TimeoutError`` or ``ConnectionError``, its failure is recorded and the next provider is tried. ``QuotaExhausted`` and ``RateLimited`` open the breaker at once; other failures open it after ``tuning.failure_threshold`` in a row. Any other exception is raised to the step unchanged.
+
+        Raises ``NoProviderAvailable`` when every provider is cooling down or failed. The step then uses its ``degrade`` fallback if it has one, and otherwise the item is parked until the earliest cooldown ends.
+        """
         store = ExecutionContext.require_store()
         self.seed_defaults(store)
         providers = [
@@ -108,6 +140,10 @@ class ProviderPool:
         raise self._no_provider_error(providers, tracker)
 
     def snapshot(self, store: CheckpointStore) -> list[dict]:
+        """Describe each provider in ``store``: one dict per provider in priority order.
+
+        Keys are ``name``, ``priority``, ``state`` (``"ready"``, ``"cooling"``, ``"probe"`` or ``"disabled"``), ``config``, ``reason`` (the last failure), ``retry_in`` (seconds left in the cooldown) and ``failures``.
+        """
         breakers = store.breakers.list_breakers(self.name)
         now = time.time()
         return [

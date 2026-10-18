@@ -67,6 +67,9 @@ class ItemRepository:
     def reset_to_running(self, run_id: str, item_key: str) -> None:
         self._update(run_id, item_key, status="running")
 
+    def delete_run(self, run_id: str) -> None:
+        self.database.execute("DELETE FROM items WHERE run_id = ?", (run_id,))
+
     def list_parked(self, run_id: str) -> list[ParkedItem]:
         rows = self.database.fetch_all(
             "SELECT item_key, input, retry_at FROM items WHERE run_id = ? AND status = 'parked' ORDER BY retry_at",

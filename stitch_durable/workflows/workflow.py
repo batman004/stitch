@@ -13,6 +13,7 @@ DEFAULT_BATCH_LABEL = "default"
 
 
 def default_item_key(value: Any) -> str:
+    """Return ``value["id"]`` for a dict with an ``id``, otherwise a short hash of the value."""
     if isinstance(value, dict) and "id" in value:
         return str(value["id"])
     encoded = json.dumps(value, sort_keys=True, default=str).encode()
@@ -20,6 +21,22 @@ def default_item_key(value: Any) -> str:
 
 
 class Workflow:
+    """A durable batch job: an async function that handles one item, run over many items.
+
+    The function calls ``@step`` functions. Inside ``run_many`` each step result is checkpointed, so a rerun skips finished items and reuses finished steps.
+
+    Example::
+
+        async def process(article):
+            text = await download(article)
+            return await summarise(article, text)
+
+        store = CheckpointStore("state.db")
+        stats = await Workflow(process, name="articles").run_many(articles, store)
+
+    Creating a ``Workflow`` registers it by name, so ``WorkflowRecovery`` can find it later. The ``@workflow`` decorator builds the same object.
+    """
+
     def __init__(
         self,
         function: Callable[[Any], Awaitable[Any]],
@@ -30,6 +47,10 @@ class Workflow:
         concurrency: int = 1,
         registry: WorkflowRegistry | None = None,
     ):
+        """Build and register a workflow.
+
+        ``function`` is an ``async def`` that takes one item. ``name`` is the registry name and the first part of the run id; the function name is used when it is left out. ``key_function`` turns an item into a stable id; by default that is ``item["id"]`` for a dict with an ``id``, otherwise a short hash of the item. ``batch_label`` is the second part of the run id; items are tracked per ``name:batch_label``. ``item_retry_policy`` retries a whole item after a step fails; finished steps are kept. The default is no retry. ``concurrency`` is how many items run at once. ``registry`` defaults to ``WorkflowRegistry.default()``.
+        """
         self.function = function
         self.name = name or function.__name__
         self.key_function = key_function
@@ -50,6 +71,14 @@ class Workflow:
         parameters: dict | None = None,
         alerter: Alerter | None = None,
     ) -> RunStatistics:
+        """Process every item, checkpointing each step, and return the run's counts.
+
+        ``items`` can be a list, any iterable, or an async iterable. Each item and every step input and result must be JSON-serializable. Items already done in this run are skipped; failed and parked items are tried again; interrupted items continue from their last finished step.
+
+        ``store`` is the ``CheckpointStore`` that holds the state. ``batch_label`` and ``concurrency`` override the values given to the constructor; use a new ``batch_label`` (for example today's date) to start a fresh run with the same workflow. ``reporter`` receives live events. ``wait_for_parked`` keeps the call running until parked items are due and retries them, for at most ``maximum_parked_wait_seconds`` when that is set. ``parameters`` is a dict stored with the run for your own reference. ``alerter`` is told when a critical step halts the run and when it recovers.
+
+        Raises ``CriticalStepFailed`` when a critical step halts the run, and ``HealthCheckFailed`` when the run is halted and the critical step's health check still fails. An ordinary step failure does not raise: it marks that item failed and the batch continues.
+        """
         options = BatchOptions(
             concurrency=concurrency or self.concurrency,
             item_retry_policy=self.item_retry_policy,

@@ -5,6 +5,7 @@
   </p>
   <p align="center">
     <a href="#quick-start">Quick Start</a> ·
+    <a href="#use-cases">Use Cases</a> ·
     <a href="#features">Features</a> ·
     <a href="#system-design">System Design</a> ·
     <a href="#samples">Samples</a> ·
@@ -48,6 +49,161 @@ Every completed step is checkpointed to SQLite before the next one starts. A rer
 
 ---
 
+## Use Cases
+
+stitch is meant to be added to a pipeline you already have. Your functions stay as they are: mark each stage with `@step` and feed the loop through `run_many`. The diffs below show only what changes. Names like `client`, `db`, `llm` and `payments` stand in for your own code.
+
+### Resume a nightly API sync after a crash
+
+A job copies 400 pages of orders from a REST API into Postgres every night. When it dies on page 312 (a deploy, an OOM kill, a dropped connection), the rerun starts again from page 1.
+
+```diff
++from datetime import date
++from stitch_durable import CheckpointStore, RetryPolicy, Workflow, step
++
++@step(retry_policy=RetryPolicy(retry_on=(httpx.TransportError, TimeoutError)))
+ async def fetch(page):
+     response = await client.get("/orders", params={"page": page})
+     response.raise_for_status()
+     return response.json()
+
++@step
+ async def load(page, rows):
+     await db.executemany(UPSERT_ORDERS, rows)
+     return len(rows)
+
+ async def sync_page(page):
+     rows = await fetch(page)
+     return await load(page, rows)
+
+-for page in range(1, 401):
+-    await sync_page(page)
++store = CheckpointStore("orders-sync.db")
++await Workflow(sync_page, name="orders-sync").run_many(
++    range(1, 401), store, batch_label=date.today().isoformat()
++)
+```
+
+- Rerunning after a crash skips the 311 finished pages and continues from 312.
+- A dropped connection is retried with backoff instead of killing the job.
+- `batch_label` makes each night its own run, so tomorrow's job doesn't skip today's pages.
+
+### Label a ticket backlog with an LLM
+
+A script sends 20,000 support tickets to an LLM for a category label, then writes the label back to the helpdesk. Halfway through, the API starts returning 429s and the script crashes. Running it again pays for the first 10,000 tickets twice.
+
+```diff
++from stitch_durable import CheckpointStore, RetryPolicy, Workflow, WorkflowRecovery, step
++
++def unlabelled(ticket):
++    return "needs-triage"
++
++@step(
++    retry_policy=RetryPolicy(maximum_attempts=6, retry_on=(llm.RateLimitError, TimeoutError)),
++    degrade=unlabelled,
++)
+ async def classify(ticket):
+     response = await llm.complete(PROMPT.format(body=ticket["body"]))
+     return response.text.strip()
+
++@step
+ async def write_label(ticket, label):
+     await helpdesk.set_tag(ticket["id"], label)
+     return label
+
+ async def label_ticket(ticket):
+     label = await classify(ticket)
+     return await write_label(ticket, label)
+
+-for ticket in tickets:
+-    await label_ticket(ticket)
++store = CheckpointStore("labels.db")
++await Workflow(label_ticket, name="labels", concurrency=8).run_many(tickets, store)
++
++# later, once the API has recovered
++await WorkflowRecovery(store).heal()
+```
+
+- Each finished ticket is checkpointed, so a rerun never calls the model for it again.
+- 429s are retried with backoff. If retries run out, the ticket is tagged `needs-triage` and the batch keeps going.
+- `heal()` finds only the tickets that got the fallback and labels them properly.
+
+### Ingest documents for search without re-embedding
+
+An ingestion job downloads PDFs, extracts text, embeds it and upserts the vectors. Embedding is the slow, paid part. If the vector database goes down mid-run, every remaining document fails and the next run embeds everything again.
+
+```diff
++from stitch_durable import CheckpointStore, CriticalPolicy, RetryPolicy, Workflow, step
++
++@step
+ async def extract(doc):
+     pdf = await storage.read(doc["path"])
+     return pdf_to_text(pdf)
+
++@step
+ async def embed(doc, text):
+     return await embedder.embed(chunk(text))
+
++@step(
++    retry_policy=RetryPolicy(retry_on=(ConnectionError, TimeoutError)),
++    critical=CriticalPolicy(health_check=vectors.ping),
++)
+ async def upsert(doc, vectors_):
+     await vectors.upsert(doc["id"], vectors_)
+     return len(vectors_)
+
+ async def ingest(doc):
+     text = await extract(doc)
+     embeddings = await embed(doc, text)
+     return await upsert(doc, embeddings)
+
+-for doc in docs:
+-    await ingest(doc)
++store = CheckpointStore("ingest.db")
++await Workflow(ingest, name="ingest", concurrency=4).run_many(docs, store)
+```
+
+- If the vector database stays down past its retries, the run halts instead of failing 5,000 documents. Pass an `alerter` to `run_many` to be notified.
+- The next run checks `vectors.ping` first and refuses to start until it passes.
+- Embeddings are checkpointed, so the resumed run only repeats the upserts.
+
+### Send monthly invoices without charging twice
+
+A billing script charges each customer and emails a receipt. It crashes after charging 300 of 1,000 customers. Rerunning it from the top would charge those 300 again.
+
+```diff
++from stitch_durable import CheckpointStore, Workflow, step
++
++@step
+ async def charge(customer):
+     return await payments.charge(
+         customer["id"],
+         customer["amount_due"],
++        idempotency_key=f"{BILLING_MONTH}:{customer['id']}",
+     )
+
++@step
+ async def send_receipt(customer, payment):
+     await mailer.send(customer["email"], render_receipt(customer, payment))
+     return True
+
+ async def bill(customer):
+     payment = await charge(customer)
+     await send_receipt(customer, payment)
+
+-for customer in customers:
+-    await bill(customer)
++store = CheckpointStore("billing.db")
++await Workflow(bill, name="billing").run_many(customers, store, batch_label=BILLING_MONTH)
+```
+
+- A rerun skips the 300 customers who were charged and emailed, and finishes the rest.
+- A customer who was charged but not emailed gets only the email on the rerun.
+- A declined card fails that one customer. The others continue, and the failed ones are retried on the next run.
+- The idempotency key covers the one gap stitch can't: a crash after the charge succeeds but before its checkpoint is written.
+
+---
+
 ## Features
 
 ### 🔖 Checkpoints
@@ -59,6 +215,13 @@ Each `@step` result is persisted to SQLite before the next step runs. On a later
 - **Interrupted steps** (left `running`) → re-executed, audit records the interruption
 
 Calling a step twice in one item stores `name` then `name#2`. Outside a workflow, `@step` calls the function directly — perfect for unit tests.
+
+To start over, delete one run or the whole store:
+
+```python
+store.delete_run("demo:default")  # one run: items, checkpoints and audit records
+store.delete()                    # close the store and remove the SQLite file
+```
 
 ### 🔁 Retries
 
@@ -199,7 +362,7 @@ Item status as stored in the `items` table. A degraded item is done with a flag;
 
 ## Samples
 
-> Each program is self-contained. Run it where `import stitch_durable` works. It writes `state.db` in the working directory. Delete that file before re-running — finished items are skipped by design.
+> Each program is self-contained. Run it where `import stitch_durable` works. It writes `state.db` in the working directory. Delete that file (or call `store.delete()`) before re-running — finished items are skipped by design.
 
 ### 1 · Retry a step, then resume the failed item
 

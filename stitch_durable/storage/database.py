@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 
 SCHEMA_VERSION = 4
@@ -93,8 +94,23 @@ class Database:
     def fetch_all(self, sql: str, parameters: tuple = ()) -> list[tuple]:
         return self.execute(sql, parameters).fetchall()
 
+    @contextmanager
+    def transaction(self):
+        self.execute("BEGIN IMMEDIATE")
+        try:
+            yield
+        except BaseException:
+            self.execute("ROLLBACK")
+            raise
+        self.execute("COMMIT")
+
     def close(self) -> None:
         self.connection.close()
+
+    def delete(self) -> None:
+        self.close()
+        for suffix in ("", "-wal", "-shm", "-journal"):
+            Path(f"{self.path}{suffix}").unlink(missing_ok=True)
 
     def _configure_durability(self) -> None:
         self.execute("PRAGMA journal_mode=WAL")

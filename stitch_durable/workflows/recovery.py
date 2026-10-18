@@ -8,9 +8,15 @@ from .workflow import Workflow
 
 
 class WorkflowRecovery:
+    """Pick up earlier runs stored in a ``CheckpointStore`` without passing the items again.
+
+    ``resume()`` continues items left running or parked. ``heal()`` redoes items that finished with a fallback result. Both look workflows up by name, so import the modules that define them first; runs whose workflow is not registered are ignored.
+    """
+
     def __init__(
         self, store: CheckpointStore, registry: WorkflowRegistry | None = None
     ):
+        """``store`` holds the runs to recover. ``registry`` defaults to ``WorkflowRegistry.default()``."""
         self.store = store
         self.registry = registry or WorkflowRegistry.default()
 
@@ -23,6 +29,12 @@ class WorkflowRecovery:
         wait_for_parked: bool = False,
         maximum_parked_wait_seconds: float | None = None,
     ) -> dict[str, RunStatistics]:
+        """Continue every item that was interrupted (still ``running``) or ``parked``.
+
+        Finished steps are reused. Failed and done items are left alone. ``workflow_names`` limits the runs to those workflows; by default every registered workflow is checked. The other arguments are passed to ``Workflow.run_many``.
+
+        Returns the statistics of each run that had work, keyed by run id (``"name:batch_label"``).
+        """
         outcomes = {}
         for run_id, workflow in self._registered_runs(workflow_names):
             inputs = [
@@ -50,6 +62,12 @@ class WorkflowRecovery:
         wait_for_parked: bool = False,
         maximum_parked_wait_seconds: float | None = None,
     ) -> dict[str, RunStatistics]:
+        """Redo every item that used a ``degrade`` fallback, now that the real dependency may be back.
+
+        For each such item, the checkpoints from the first degraded step onward are deleted and the item runs again; steps before it are reused. If the dependency is still down, the fallback is used again. ``workflow_names`` limits the runs to those workflows; by default every registered workflow is checked. The other arguments are passed to ``Workflow.run_many``.
+
+        Returns the statistics of each run that had degraded items, keyed by run id (``"name:batch_label"``).
+        """
         outcomes = {}
         for run_id, workflow in self._registered_runs(workflow_names):
             degraded_items = self.store.items.list_degraded(run_id)
