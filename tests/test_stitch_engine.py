@@ -164,6 +164,24 @@ class ResumeTest(EngineTestCase):
         self.assertEqual(len(recorder.calls), 100)
 
 
+class AsyncRequirementTest(unittest.TestCase):
+    def test_step_rejects_a_plain_function(self):
+        def fetch(url):
+            return url
+
+        with self.assertRaisesRegex(TypeError, "fetch is a plain def"):
+            step(fetch)
+        with self.assertRaisesRegex(TypeError, "async def"):
+            step(retry_policy=FAST_RETRY)(fetch)
+
+    def test_workflow_rejects_a_plain_function(self):
+        def handle(item):
+            return item
+
+        with self.assertRaisesRegex(TypeError, "handle is a plain def"):
+            Workflow(handle, registry=WorkflowRegistry())
+
+
 class RetryTest(EngineTestCase):
     def test_step_retries_transient_errors_and_only_that_step_repeats(self):
         recorder.failures[("second", "a")] = [

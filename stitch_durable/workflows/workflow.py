@@ -5,6 +5,7 @@ from typing import Any, Awaitable, Callable, Iterable, AsyncIterable
 from ..execution.batch_runner import BatchOptions, BatchRunner
 from ..alerts import Alerter
 from ..execution.reporting import Reporter, RunStatistics
+from ..execution.step_decorator import require_async_function
 from ..retry_policy import NO_RETRY, RetryPolicy
 from ..storage.checkpoint_store import CheckpointStore
 from .registry import WorkflowRegistry
@@ -51,6 +52,7 @@ class Workflow:
 
         ``function`` is an ``async def`` that takes one item. ``name`` is the registry name and the first part of the run id; the function name is used when it is left out. ``key_function`` turns an item into a stable id; by default that is ``item["id"]`` for a dict with an ``id``, otherwise a short hash of the item. ``batch_label`` is the second part of the run id; items are tracked per ``name:batch_label``. ``item_retry_policy`` retries a whole item after a step fails; finished steps are kept. The default is no retry. ``concurrency`` is how many items run at once. ``registry`` defaults to ``WorkflowRegistry.default()``.
         """
+        require_async_function(function, "Workflow")
         self.function = function
         self.name = name or function.__name__
         self.key_function = key_function

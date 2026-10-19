@@ -171,8 +171,11 @@ class CriticalStepTest(EngineTestCase):
         self.assertIn("alert_failed", events)
 
     def test_a_critical_step_cannot_also_degrade(self):
+        async def save(item_key):
+            return None
+
         with self.assertRaises(ValueError):
-            step(critical=True, degrade=lambda item_key: None)(lambda item_key: None)
+            step(critical=True, degrade=lambda item_key: None)(save)
 
 
 if __name__ == "__main__":

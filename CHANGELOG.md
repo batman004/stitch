@@ -13,6 +13,11 @@ All notable changes to this project are documented here. The format follows
 - Docstrings on the public API for IDE hover help.
 - README use cases showing stitch added to existing pipelines.
 
+### Changed
+
+- `@step` and `Workflow` raise `TypeError` when given a plain `def` instead of
+  an `async def`, rather than failing later with "object can't be awaited".
+
 ## [0.1.0]
 
 Initial release.

@@ -1,4 +1,5 @@
 import functools
+import inspect
 from typing import Any, Callable
 
 from ..critical import CriticalPolicy, CriticalRegistry
@@ -34,6 +35,7 @@ def step(
 
         A critical step is also recorded in ``CriticalRegistry``, so the runner can look up its health check before starting work.
         """
+        require_async_function(target, "@step")
         policy = resolve_critical_policy(critical, degrade)
         definition = StepDefinition(
             name or target.__name__,
@@ -50,6 +52,20 @@ def step(
     if function is None:
         return decorate
     return decorate(function)
+
+
+def require_async_function(target: Callable[..., Any], decorator: str) -> None:
+    """Raise ``TypeError`` unless ``target`` is an ``async def`` function.
+
+    A plain function would run, return a value, and then fail later with ``'X' object can't be awaited``; failing at decoration time names the real problem.
+    """
+    if inspect.iscoroutinefunction(target):
+        return
+    name = getattr(target, "__name__", repr(target))
+    raise TypeError(
+        f"{decorator} needs an async function, but {name} is a plain def. "
+        "Define it with 'async def'; run blocking code inside it with 'await asyncio.to_thread(...)'."
+    )
 
 
 def resolve_critical_policy(
