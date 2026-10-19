@@ -32,7 +32,7 @@ from .workflows.recovery import WorkflowRecovery
 from .workflows.registry import WorkflowRegistry
 from .workflows.workflow import Workflow, workflow
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Alert",

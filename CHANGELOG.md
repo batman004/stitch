@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-20
+
 ### Added
 
 - `CheckpointStore.delete_run(run_id)` removes one run's items, checkpoints and audit records.
@@ -33,5 +35,6 @@ Initial release.
 - Workflow recovery for parked and failed items.
 - Pluggable `Alerter` for run alerts.
 
-[Unreleased]: https://github.com/batman004/stitch/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/batman004/stitch/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/batman004/stitch/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/batman004/stitch/releases/tag/v0.1.0
