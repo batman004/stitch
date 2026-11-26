@@ -172,14 +172,14 @@ An ingestion job downloads PDFs, extracts text, embeds it and upserts the vector
 A billing script charges each customer and emails a receipt. It crashes after charging 300 of 1,000 customers. Rerunning it from the top would charge those 300 again.
 
 ```diff
-+from stitch_durable import CheckpointStore, Workflow, step
++from stitch_durable import CheckpointStore, Workflow, idempotency_key, step
 +
 +@step
  async def charge(customer):
      return await payments.charge(
          customer["id"],
          customer["amount_due"],
-+        idempotency_key=f"{BILLING_MONTH}:{customer['id']}",
++        idempotency_key=idempotency_key(),
      )
 
 +@step
@@ -200,7 +200,9 @@ A billing script charges each customer and emails a receipt. It crashes after ch
 - A rerun skips the 300 customers who were charged and emailed, and finishes the rest.
 - A customer who was charged but not emailed gets only the email on the rerun.
 - A declined card fails that one customer. The others continue, and the failed ones are retried on the next run.
-- The idempotency key covers the one gap stitch can't: a crash after the charge succeeds but before its checkpoint is written.
+- The idempotency key covers the one gap stitch can't: a crash after the charge succeeds but before its checkpoint is written. `idempotency_key()` gives the same key on the rerun, so the provider returns the first payment instead of charging again.
+
+[`examples/payments`](examples/payments) has a payment client and a local Mollie-style API to try this by killing the script yourself.
 
 ---
 
@@ -222,6 +224,49 @@ To start over, delete one run or the whole store:
 store.delete_run("demo:default")  # one run: items, checkpoints and audit records
 store.delete()                    # close the store and remove the SQLite file
 ```
+
+### 🔑 Idempotency Keys
+
+A crash can land after a request succeeds but before its checkpoint is written. The rerun then sends the request again. `idempotency_key()` gives the provider a way to spot that:
+
+```python
+from stitch_durable import idempotency_key, step
+
+@step
+async def charge(customer):
+    return await payments.post("/v1/payments", body(customer), headers={"Idempotency-Key": idempotency_key()})
+```
+
+- The key is built from the run, item and step, so it is the same on every retry, rerun and heal.
+- A new `batch_label` (next month's run) gives new keys.
+- `name#2` (the same step called twice in one item) gets its own key.
+- `idempotency_key("refund")` gives one step several keys when it sends several requests.
+- Outside a running step it raises `RuntimeError`.
+
+The provider decides how long it remembers a key. Check its docs.
+
+### 📥 Webhook Inbox
+
+Webhook senders want a fast `200`, and they retry, so the same event can arrive several times. `accept` records the event and returns. A worker does the work later, with checkpoints.
+
+```python
+events = Workflow(handle_payment, name="payments", key_function=lambda e: f"{e['payment']}:{e['status']}")
+
+# in the HTTP handler
+if events.accept(event, store):
+    ...  # new event
+else:
+    ...  # seen before, ignored
+return 200
+
+# in one worker loop
+await events.process_pending(store)
+```
+
+- `accept` writes the item as `pending` in one short transaction. A crash after it returns loses nothing.
+- A key it has already seen returns `False`, whatever happened to the first one.
+- `process_pending` runs pending items, items left `running` by a crash, and parked items that are due. Call it from one place at a time.
+- Choose a key that names the change, such as payment id plus status, so a later status change is a new event.
 
 ### 🔁 Retries
 
@@ -764,7 +809,7 @@ resumed 1 done, 1 steps reused
 | Area | Events |
 |---|---|
 | **Run** | `run_started` · `run_finished` · `run_halted` · `run_blocked` · `run_recovered` |
-| **Item** | `item_started` · `item_done` · `item_skipped` · `item_failed` · `item_parked` · `item_retry` |
+| **Item** | `item_accepted` · `item_duplicate` · `item_started` · `item_done` · `item_skipped` · `item_failed` · `item_parked` · `item_retry` |
 | **Step** | `step_started` · `step_done` · `step_skipped` · `step_failed` · `step_retry` · `step_degraded` · `step_waiting` |
 | **Provider** | `provider_used` · `provider_failed` · `provider_registered` · `failover` · `breaker_opened` · `breaker_closed` · `breaker_probe` |
 | **Other** | `heal_started` · `cooldown_wait` · `cooldown_over` · `critical_failure` · `alert_sent` · `alert_failed` |
@@ -773,6 +818,7 @@ resumed 1 done, 1 steps reused
 
 | Status | `run_many` (same items) | `resume` | `heal` |
 |---|---|---|---|
+| `pending` | runs | runs | not included |
 | `running` | continues, finished steps skipped | continues | included if degraded flag set |
 | `parked` | tries again | tries again | included if degraded flag set |
 | `failed` | tries again | left failed | included if degraded flag set |

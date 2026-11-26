@@ -1,5 +1,6 @@
 import hashlib
 import json
+import time
 from typing import Any, Awaitable, Callable, Iterable, AsyncIterable
 
 from ..execution.batch_runner import BatchOptions, BatchRunner
@@ -7,6 +8,7 @@ from ..alerts import Alerter
 from ..execution.reporting import Reporter, RunStatistics
 from ..execution.step_decorator import require_async_function
 from ..retry_policy import NO_RETRY, RetryPolicy
+from ..serialization import to_json_text
 from ..storage.checkpoint_store import CheckpointStore
 from .registry import WorkflowRegistry
 
@@ -99,6 +101,65 @@ class Workflow:
             options,
         )
         return await runner.run(items)
+
+    def accept(
+        self, item: Any, store: CheckpointStore, batch_label: str | None = None
+    ) -> bool:
+        """Record ``item`` for later processing in one quick write, and return whether it was new.
+
+        Use it where something must be acknowledged fast and handled reliably, such as a webhook: record the event, answer ``200 OK``, and let ``process_pending`` do the work. The item is stored as ``pending`` with its JSON input, so it survives a crash before it is processed. This method is not async and runs no step.
+
+        Returns ``False`` when the run already holds an item with the same key, whatever its status, so a repeated delivery is recorded once. Choose a ``key_function`` that names the change, not just the object: for a payment webhook that is the payment id plus the status you fetched, so a later status of the same payment is a new item.
+
+        Raises ``TypeError`` when ``item`` is not JSON-serializable. ``accept`` may run in a different process from the one that calls ``process_pending``, but only one process should process a run.
+        """
+        input_text = to_json_text(item)
+        if input_text is None:
+            raise TypeError(
+                f"accept() stores the item as JSON, and {type(item).__name__} is not JSON-serializable"
+            )
+        run_id = self._run_id(batch_label)
+        item_key = self.key_function(item)
+        with store.database.transaction():
+            store.runs.ensure_pending(run_id, self.name)
+            accepted = store.items.accept(run_id, item_key, input_text)
+            event = "item_accepted" if accepted else "item_duplicate"
+            store.audit.record(run_id, event, {"item": item_key})
+        return accepted
+
+    async def process_pending(
+        self,
+        store: CheckpointStore,
+        batch_label: str | None = None,
+        concurrency: int | None = None,
+        reporter: Reporter | None = None,
+        alerter: Alerter | None = None,
+    ) -> RunStatistics:
+        """Process every item ``accept`` recorded that has not finished, and return the counts.
+
+        That covers items still ``pending``, items left ``running`` when a process died, and ``parked`` items whose wait is over. Finished steps are reused, as in ``run_many``. When nothing is waiting, it returns empty counts without opening the run, so it is cheap to call in a loop::
+
+            while True:
+                await handle_payment.process_pending(store)
+                await asyncio.sleep(1)
+
+        Call it from one place at a time: two overlapping calls could pick up the same running item.
+        """
+        run_id = self._run_id(batch_label)
+        ready = store.items.list_ready(run_id, time.time())
+        if not ready:
+            return RunStatistics()
+        return await self.run_many(
+            [item.input_value for item in ready],
+            store,
+            batch_label=batch_label,
+            concurrency=concurrency,
+            reporter=reporter,
+            alerter=alerter,
+        )
+
+    def _run_id(self, batch_label: str | None) -> str:
+        return f"{self.name}:{batch_label or self.batch_label}"
 
 
 def workflow(

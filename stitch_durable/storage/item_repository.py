@@ -64,6 +64,28 @@ class ItemRepository:
     def mark_failed(self, run_id: str, item_key: str, error: str) -> None:
         self._update(run_id, item_key, status="failed", error=error)
 
+    def accept(self, run_id: str, item_key: str, input_text: str) -> bool:
+        """Insert the item as ``pending`` unless the run already holds that key; return whether it was new."""
+        cursor = self.database.execute(
+            "INSERT OR IGNORE INTO items (run_id, item_key, status, sequence, input, updated_at) "
+            "VALUES (?, ?, 'pending', (SELECT COUNT(*) FROM items WHERE run_id = ?), ?, ?)",
+            (run_id, item_key, run_id, input_text, time.time()),
+        )
+        return cursor.rowcount == 1
+
+    def list_ready(self, run_id: str, now: float) -> list[ItemInput]:
+        """Items waiting to be processed: ``pending``, left ``running`` by a crash, or ``parked`` and due by ``now``."""
+        rows = self.database.fetch_all(
+            "SELECT item_key, input FROM items WHERE run_id = ? AND input IS NOT NULL "
+            "AND (status IN ('pending', 'running') OR (status = 'parked' AND retry_at <= ?)) "
+            "ORDER BY sequence",
+            (run_id, now),
+        )
+        return [
+            ItemInput(item_key, from_json_text(input_text))
+            for item_key, input_text in rows
+        ]
+
     def reset_to_running(self, run_id: str, item_key: str) -> None:
         self._update(run_id, item_key, status="running")
 
@@ -82,7 +104,7 @@ class ItemRepository:
 
     def list_resumable(self, run_id: str) -> list[ItemInput]:
         return self._list_inputs(
-            "SELECT item_key, input FROM items WHERE run_id = ? AND status IN ('running', 'parked') "
+            "SELECT item_key, input FROM items WHERE run_id = ? AND status IN ('pending', 'running', 'parked') "
             "AND input IS NOT NULL ORDER BY sequence",
             run_id,
         )

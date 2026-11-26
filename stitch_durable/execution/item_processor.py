@@ -105,7 +105,7 @@ class ItemProcessor:
             "item_started",
             item=item_key,
             attempt=attempt,
-            resumed=previous_status is not None,
+            resumed=previous_status not in (None, "pending"),
             was=previous_status,
         )
 

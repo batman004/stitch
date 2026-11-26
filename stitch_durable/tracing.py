@@ -3,6 +3,8 @@ import time
 from .records import AuditRecord
 
 EVENT_STYLES = {
+    "item_accepted": ("⊕", "36"),
+    "item_duplicate": ("≡", "2"),
     "item_started": ("●", "1"),
     "item_done": ("■", "32"),
     "item_skipped": ("↷", "2"),

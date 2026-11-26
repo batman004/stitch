@@ -26,6 +26,19 @@ class RunRepository:
         )
         return existing[0]
 
+    def ensure_pending(self, run_id: str, workflow_name: str) -> None:
+        """Make sure the run exists so recovery can find it, and mark a finished run as having new work."""
+        now = time.time()
+        self.database.execute(
+            "INSERT OR IGNORE INTO runs (run_id, workflow, status, parameters, created_at, updated_at) "
+            "VALUES (?, ?, 'pending', '{}', ?, ?)",
+            (run_id, workflow_name, now, now),
+        )
+        self.database.execute(
+            "UPDATE runs SET status = 'pending', updated_at = ? WHERE run_id = ? AND status = 'done'",
+            (now, run_id),
+        )
+
     def finish_run(self, run_id: str) -> None:
         self.database.execute(
             "UPDATE runs SET status = 'done', updated_at = ? WHERE run_id = ?",

@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `idempotency_key(scope="")` returns a stable key for the current run, item and
+  step. It stays the same on retries, reruns and heals, so a payment provider can
+  recognise a request it already handled (sent as an `Idempotency-Key` header).
+- `Workflow.accept(item, store)` records an item as `pending` in one short
+  transaction and returns `False` for a key it has already seen. Use it to answer
+  webhooks fast and do the work later.
+- `Workflow.process_pending(store)` runs everything accepted but not finished,
+  including parked items that are due.
+- `examples/payments`: a payment client (`billing.py`) and a local Mollie-style API (`fake_payments_api.py`)
+  to try killing the script, restarting the server and rerunning, with and without `idempotency_key()`.
+
+### Changed
+
+- `WorkflowRecovery.resume()` also picks up `pending` items.
+
 ## [0.2.0] - 2026-10-20
 
 ### Added
