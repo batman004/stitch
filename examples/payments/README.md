@@ -47,6 +47,7 @@ Each run ends with the same `report` summary, counted from the API's own payment
 |---|---|---|
 | `python billing.py --plain` | Kill it after a few customers, run it again | Everyone charged before the kill is charged twice |
 | `python billing.py --random-keys` | Kill it right after terminal 1 logs `payment created` | Finished customers are skipped; the one in flight is charged twice |
+| `python billing.py`, kill it the same way, then `python billing.py --new-price` | Same crash, but the rerun asks for 10.99 instead of 9.99 | The key is reused with a different body: the API logs `idempotency_key_mismatch`, answers 400, and that customer fails instead of being charged again |
 | `python billing.py` | Same kill | Nobody is charged twice; the API replays the first payment |
 
 The API waits 2 seconds between creating a payment and replying. Kill the client inside that window to hit the worst case: the payment exists, but your code never heard about it.

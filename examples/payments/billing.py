@@ -407,6 +407,10 @@ async def main():
         EVENTS.unlink(missing_ok=True)
         call("DELETE", "/v2/payments")
         return log.info("reset state=%s events=%s", STATE, EVENTS)
+    if args.new_price:
+        for customer in CUSTOMERS:
+            if customer["amount"] != "0.00":
+                customer["amount"] = "10.99"
     if args.plain:
         await run_plain()
     else:
@@ -436,6 +440,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--plain", action="store_true", help="a bare for loop, without stitch"
+    )
+    parser.add_argument(
+        "--new-price",
+        action="store_true",
+        help="bill 10.99 instead of 9.99: a rerun reuses the key with a different body",
     )
     parser.add_argument("--reset", action="store_true")
     parser.parse_args(namespace=args)

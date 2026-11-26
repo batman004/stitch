@@ -114,6 +114,12 @@ class Handler(BaseHTTPRequestHandler):
         if key in keys:
             first_body, first_payment = keys[key]
             if first_body != fingerprint:
+                log.warning(
+                    "payment refused status=400 reason=idempotency_key_mismatch "
+                    "idempotency_key=%s original_payment=%s",
+                    key,
+                    first_payment["id"],
+                )
                 return self.error(
                     400,
                     "Bad Request",
